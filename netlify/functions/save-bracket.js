@@ -25,11 +25,12 @@ export default async (req) => {
     const sanitizedConnectionString = connectionString.replace('channel_binding=require&', '').replace('&channel_binding=require', '').replace('?channel_binding=require', '?');
     const sql = neon(sanitizedConnectionString);
 
-    // Insert prediction
+    // Insert prediction - pass object directly, Neon driver handles JSONB serialization
     console.log('Attempting to insert prediction for creator:', creator);
+    
     const result = await sql`
       INSERT INTO predictions (creator, predictions, created_at)
-      VALUES (${creator}, ${JSON.stringify(predictions)}::jsonb, ${timestamp})
+      VALUES (${creator}, ${predictions}, ${timestamp})
       RETURNING id
     `;
     console.log('Insert successful, ID:', result[0].id);
