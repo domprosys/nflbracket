@@ -1039,11 +1039,15 @@
             state.creator = creatorName;
 
             // Save to database immediately (don't wait for image generation)
+            console.log('Sending prediction to database...', state);
             fetch('/.netlify/functions/save-bracket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
-            }).catch(e => console.error('Database save failed:', e));
+            })
+            .then(response => response.json())
+            .then(data => console.log('Database response:', data))
+            .catch(e => console.error('Database save failed:', e));
 
             // Get current date and time for the image overlay
             const now = new Date();

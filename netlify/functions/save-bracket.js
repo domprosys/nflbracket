@@ -5,8 +5,10 @@ export default async (req) => {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  try {
-    const { predictions, creator, timestamp } = await req.json();
+    try {
+    const body = await req.json();
+    console.log('Received payload:', JSON.stringify(body, null, 2));
+    const { predictions, creator, timestamp } = body;
     
     // Connect to Neon database using the environment variable
     // Check both standard DATABASE_URL and NETLIFY_DATABASE_URL
@@ -33,12 +35,15 @@ export default async (req) => {
     `;
 
     // Insert prediction
-    await sql`
+    console.log('Inserting into database...');
+    const result = await sql`
       INSERT INTO predictions (creator, predictions, created_at)
-      VALUES (${creator}, ${predictions}, ${timestamp})
+      VALUES (${creator}, ${JSON.stringify(predictions)}, ${timestamp})
+      RETURNING id
     `;
+    console.log('Insert successful, ID:', result[0].id);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, id: result[0].id }), {
       headers: { "Content-Type": "application/json" }
     });
   } catch (error) {
