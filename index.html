@@ -1140,7 +1140,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
             })
-            .catch(e => console.error('Database save failed:', e));
+            .then(response => {
+                console.log('Database save response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Database save response:', data);
+                if (!data.success) {
+                    console.error('Database save failed:', data.error, data.details);
+                }
+            })
+            .catch(e => console.error('Database save network error:', e));
 
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', {
