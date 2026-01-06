@@ -1,0 +1,13 @@
+{
+  "name": "nflbracket",
+  "version": "1.0.0",
+  "description": "NFL Playoff Bracket Predictor",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.6.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Playoff Bracket 2025-2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            color: #013369;
+        }
+
+        header p {
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+        }
+
+        #bracket {
+            background: white;
+            padding: 20px 0;
+            overflow-x: auto;
+        }
+
+        .bracket-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 200px) 280px repeat(3, 200px);
+            gap: 0;
+            width: max-content;
+            margin: 0 auto;
+        }
+
+        .rounds-header {
+            display: contents;
+        }
+
+        .round-header-item {
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 0 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .round-header-item.superbowl-header {
+            padding: 10px 0 15px;
+            font-size: 1em;
+            color: #D50A0A;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+        }
+
+        .conference-label {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            position: absolute;
+            top: -35px;
+            left: 0;
+            right: 0;
+        }
+
+        .conference-label.afc {
+            color: #013369;
+        }
+
+        .conference-label.nfc {
+            color: #D50A0A;
+        }
+
+        #afc-conf-content,
+        #nfc-conf-content {
+            position: relative;
+        }
+
+        .bracket-content {
+            display: contents;
+        }
+
+        .round-column {
+            padding: 20px 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .conference-logo {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+            opacity: 0.15; /* Subtle background effect to not interfere with text */
+        }
+
+        .conference-logo img {
+            height: 90px;
+            width: auto;
+        }
+
+        /* Ensure content sits above the logo */
+        .round-content {
+            z-index: 1;
+        }
+
+        .round-column.superbowl-column {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .superbowl-logo {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+        }
+
+        .superbowl-logo img {
+            height: 140px;
+            width: auto;
+        }
+
+        .superbowl-teams {
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 260px;
+        }
+
+        .round-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex: 1;
+            min-height: 500px;
+        }
+
+        .matchup {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            padding: 8px 0;
+            margin-bottom: 12px;
+        }
+
+        .matchup:last-child {
+            margin-bottom: 0;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            height: 55px;
+            width: 100%;
+        }
+
+        .team-logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .team:hover {
+            background: #e8f4f8;
+            border-color: #2196F3;
+        }
+
+        .team.selected {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .team.winner {
+            background: #c8e6c9;
+            border-color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .team.empty {
+            background: #fafafa;
+            border: 2px dashed #ccc;
+            cursor: default;
+            justify-content: center;
+            color: #999;
+        }
+
+        .team.empty:hover {
+            background: #fafafa;
+            transform: none;
+            border-color: #ccc;
+        }
+
+        .seed {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.65em;
+            text-align: center;
+        }
+
+        .team-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .team-name {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .team.bye-team {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #81c784;
+        }
+
+        .team.bye-opponent {
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            cursor: default;
+            color: #999;
+        }
+
+        .team.bye-opponent:hover {
+            transform: none;
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+
+        .bye-label {
+            font-size: 0.65em;
+            color: #4CAF50;
+            font-weight: bold;
+            margin-left: auto;
+            text-transform: uppercase;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .superbowl-teams .team:hover {
+            transform: none;
+        }
+
+        .champion-team {
+            width: 100%;
+            height: 114px;
+            padding: 15px 15px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFC107 50%, #FFD700 100%);
+            border: 4px solid #DAA520;
+            border-radius: 8px;
+            font-size: 1.15em;
+            font-weight: bold;
+            color: #333;
+            box-shadow:
+                0 8px 20px rgba(255, 215, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .champion-team .sb-logo {
+            display: none;
+        }
+
+        .champion-team .team-logo {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .champion-team .team-name {
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .champion-team .trophy {
+            font-size: 1.5em;
+        }
+
+        .champion-team.empty {
+            background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+            border: 3px dashed #ccc;
+            color: #999;
+            box-shadow: none;
+        }
+
+        .connector {
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            background: #ddd;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .scroll-indicator {
+            display: none;
+            text-align: center;
+            background: #e3f2fd;
+            color: #013369;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1500px) {
+            .scroll-indicator {
+                display: block;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .creator-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .creator-info label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .creator-info input {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 300px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .creator-info input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            #bracket {
+                padding: 20px 10px;
+            }
+
+            .creator-info input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NFL Playoff Bracket 2025-2026</h1>
+            <p>Click on teams to predict winners and advance them through the bracket</p>
+        </header>
+
+        <div class="creator-info">
+            <input type="text" id="creator-name" placeholder="Enter your name here">
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="exportBracket()">Download Bracket</button>
+            <button class="btn btn-secondary" onclick="resetBracket()">Reset Bracket</button>
+        </div>
+
+        <div class="scroll-indicator">↔ Swipe to view full bracket</div>
+        <div id="bracket">
+            <div class="bracket-grid">
+                <!-- Header Row -->
+                <div class="rounds-header">
+                    <div class="round-header-item">Wild Card</div>
+                    <div class="round-header-item">Divisional</div>
+                    <div class="round-header-item">Conference</div>
+                    <div class="round-header-item superbowl-header">Super Bowl</div>
+                    <div class="round-header-item">Conference</div>
+                    <div class="round-header-item">Divisional</div>
+                    <div class="round-header-item">Wild Card</div>
+                </div>
+
+                <!-- Bracket Content Row -->
+                <div class="bracket-content">
+                    <!-- AFC Wild Card -->
+                    <div class="round-column afc">
+                        <div id="afc-wc-content" class="round-content"></div>
+                    </div>
+                    <!-- AFC Divisional -->
+                    <div class="round-column afc">
+                        <div id="afc-div-content" class="round-content"></div>
+                    </div>
+                    <!-- AFC Conference -->
+                    <div class="round-column afc">
+                        <div class="conference-logo">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/American_Football_Conference_logo.svg" alt="AFC Logo">
+                        </div>
+                        <div id="afc-conf-content" class="round-content"></div>
+                    </div>
+                    <!-- Super Bowl -->
+                    <div class="round-column superbowl-column">
+                        <div class="superbowl-logo">
+                            <img src="https://upload.wikimedia.org/wikipedia/en/b/b0/Super_Bowl_LX_Logo.svg" alt="Super Bowl LX">
+                        </div>
+                        <div class="superbowl-teams">
+                            <div class="team empty" data-round="sb" data-conference="afc" data-slot="0">
+                                <span>AFC Champion</span>
+                            </div>
+                            <div class="champion-team empty">
+                                <span>TBD</span>
+                            </div>
+                            <div class="team empty" data-round="sb" data-conference="nfc" data-slot="1">
+                                <span>NFC Champion</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- NFC Conference -->
+                    <div class="round-column nfc">
+                        <div class="conference-logo">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/National_Football_Conference_logo.svg" alt="NFC Logo">
+                        </div>
+                        <div id="nfc-conf-content" class="round-content"></div>
+                    </div>
+                    <!-- NFC Divisional -->
+                    <div class="round-column nfc">
+                        <div id="nfc-div-content" class="round-content"></div>
+                    </div>
+                    <!-- NFC Wild Card -->
+                    <div class="round-column nfc">
+                        <div id="nfc-wc-content" class="round-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Team data - easy to update with actual playoff teams
+        // 2025-2026 NFL Playoff Teams (Updated after regular season)
+        const teams = {
+            AFC: [
+                { seed: 1, name: "Denver Broncos", abbr: "DEN", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png" },
+                { seed: 2, name: "New England Patriots", abbr: "NE", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png" },
+                { seed: 3, name: "Jacksonville Jaguars", abbr: "JAX", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png" },
+                { seed: 4, name: "Pittsburgh Steelers", abbr: "PIT", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png" },
+                { seed: 5, name: "Houston Texans", abbr: "HOU", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png" },
+                { seed: 6, name: "Buffalo Bills", abbr: "BUF", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png" },
+                { seed: 7, name: "Los Angeles Chargers", abbr: "LAC", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png" }
+            ],
+            NFC: [
+                { seed: 1, name: "Seattle Seahawks", abbr: "SEA", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png" },
+                { seed: 2, name: "Chicago Bears", abbr: "CHI", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png" },
+                { seed: 3, name: "Philadelphia Eagles", abbr: "PHI", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png" },
+                { seed: 4, name: "Carolina Panthers", abbr: "CAR", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/car.png" },
+                { seed: 5, name: "Los Angeles Rams", abbr: "LAR", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png" },
+                { seed: 6, name: "San Francisco 49ers", abbr: "SF", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" },
+                { seed: 7, name: "Green Bay Packers", abbr: "GB", logo: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png" }
+            ]
+        };
+
+        // Bracket state
+        let bracket = {
+            AFC: {
+                wildcard: [],
+                divisional: [],
+                conference: []
+            },
+            NFC: {
+                wildcard: [],
+                divisional: [],
+                conference: []
+            },
+            superbowl: [],
+            champion: null
+        };
+
+        // Initialize bracket
+        function initBracket() {
+            // Set up Wild Card matchups
+            setupWildCard('AFC');
+            setupWildCard('NFC');
+        }
+
+        function setupWildCard(conference) {
+            const confTeams = teams[conference];
+            const wcContainer = document.getElementById(`${conference.toLowerCase()}-wc-content`);
+
+            // First matchup: #1 seed with BYE
+            const byeMatchup = document.createElement('div');
+            byeMatchup.className = 'matchup';
+
+            // #1 seed
+            const seed1Div = document.createElement('div');
+            seed1Div.className = 'team bye-team';
+            seed1Div.dataset.conference = conference;
+            seed1Div.dataset.round = 'wildcard-bye';
+            seed1Div.dataset.slot = '0';
+            seed1Div.dataset.teamData = JSON.stringify(confTeams[0]);
+            seed1Div.innerHTML = `
+                <div class="team-logo-container">
+                    <img class="team-logo" src="${confTeams[0].logo}" alt="${confTeams[0].name}" onerror="this.style.display='none'">
+                    <span class="seed">#1</span>
+                </div>
+                <span class="team-name">${confTeams[0].name}</span>
+            `;
+            byeMatchup.appendChild(seed1Div);
+
+            // BYE opponent slot
+            const byeOpponent = document.createElement('div');
+            byeOpponent.className = 'team bye-opponent';
+            byeOpponent.innerHTML = '<span>— BYE —</span>';
+            byeMatchup.appendChild(byeOpponent);
+
+            wcContainer.appendChild(byeMatchup);
+
+            // Wild Card matchups: #2 vs #7, #3 vs #6, #4 vs #5
+            const matchups = [
+                [confTeams[1], confTeams[6]], // #2 vs #7
+                [confTeams[2], confTeams[5]], // #3 vs #6
+                [confTeams[3], confTeams[4]]  // #4 vs #5
+            ];
+
+            matchups.forEach((matchup, idx) => {
+                const matchupDiv = document.createElement('div');
+                matchupDiv.className = 'matchup';
+
+                matchup.forEach((team, teamIdx) => {
+                    const teamDiv = createTeamElement(team, conference, 'wildcard', idx * 2 + teamIdx);
+                    matchupDiv.appendChild(teamDiv);
+                });
+
+                wcContainer.appendChild(matchupDiv);
+            });
+
+            // Set up Divisional round slots
+            setupDivisional(conference);
+        }
+
+        function setupDivisional(conference) {
+            const divContainer = document.getElementById(`${conference.toLowerCase()}-div-content`);
+            const confTeams = teams[conference];
+
+            // Matchup 1: #1 seed (BYE) vs Lowest Remaining Seed (Dynamic)
+            const matchup1 = document.createElement('div');
+            matchup1.className = 'matchup';
+
+            // Slot 0: #1 seed with BYE (top position)
+            const byeTeam = createByeTeamElement(confTeams[0], conference, 'divisional', 0);
+            matchup1.appendChild(byeTeam);
+
+            // Slot 1: TBD (Lowest remaining seed from Wild Card)
+            matchup1.appendChild(createEmptySlot(conference, 'divisional', 1));
+
+            divContainer.appendChild(matchup1);
+
+            // Matchup 2: Best Remaining vs Middle Remaining (Dynamic)
+            const matchup2 = document.createElement('div');
+            matchup2.className = 'matchup';
+
+            matchup2.appendChild(createEmptySlot(conference, 'divisional', 2));
+            matchup2.appendChild(createEmptySlot(conference, 'divisional', 3));
+
+            divContainer.appendChild(matchup2);
+
+            // Set up Conference championship slots
+            setupConference(conference);
+        }
+
+        function createByeTeamElement(team, conference, round, slot) {
+            const div = document.createElement('div');
+            div.className = 'team';
+            div.dataset.conference = conference;
+            div.dataset.round = round;
+            div.dataset.slot = slot;
+            div.dataset.teamData = JSON.stringify(team);
+
+            div.innerHTML = `
+                <div class="team-logo-container">
+                    <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                    <span class="seed">#${team.seed}</span>
+                </div>
+                <span class="team-name">${team.name}</span>
+            `;
+
+            div.onclick = () => selectTeam(div);
+
+            return div;
+        }
+
+        function setupConference(conference) {
+            const confContainer = document.getElementById(`${conference.toLowerCase()}-conf-content`);
+
+            const matchupDiv = document.createElement('div');
+            matchupDiv.className = 'matchup';
+
+            for (let i = 0; i < 2; i++) {
+                const teamDiv = createEmptySlot(conference, 'conference', i);
+                matchupDiv.appendChild(teamDiv);
+            }
+
+            confContainer.appendChild(matchupDiv);
+        }
+
+        function createTeamElement(team, conference, round, slot) {
+            const div = document.createElement('div');
+            div.className = 'team';
+            div.dataset.conference = conference;
+            div.dataset.round = round;
+            div.dataset.slot = slot;
+            div.dataset.teamData = JSON.stringify(team);
+
+            div.innerHTML = `
+                <div class="team-logo-container">
+                    <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                    <span class="seed">#${team.seed}</span>
+                </div>
+                <span class="team-name">${team.name}</span>
+            `;
+
+            div.onclick = () => selectTeam(div);
+
+            return div;
+        }
+
+        function createEmptySlot(conference, round, slot) {
+            const div = document.createElement('div');
+            div.className = 'team empty';
+            div.dataset.conference = conference;
+            div.dataset.round = round;
+            div.dataset.slot = slot;
+            div.innerHTML = '<span>TBD</span>';
+            return div;
+        }
+
+        function selectTeam(teamDiv) {
+            if (teamDiv.classList.contains('empty')) return;
+
+            const conference = teamDiv.dataset.conference;
+            const round = teamDiv.dataset.round;
+            const slot = parseInt(teamDiv.dataset.slot);
+            const teamData = JSON.parse(teamDiv.dataset.teamData);
+
+            // Get matchup (same round, slot divided by 2)
+            const matchupIdx = Math.floor(slot / 2);
+            const allTeamsInMatchup = document.querySelectorAll(
+                `[data-conference="${conference}"][data-round="${round}"][data-slot="${matchupIdx * 2}"], ` +
+                `[data-conference="${conference}"][data-round="${round}"][data-slot="${matchupIdx * 2 + 1}"]`
+            );
+
+            // Remove selection from other team in matchup
+            allTeamsInMatchup.forEach(t => t.classList.remove('selected', 'winner'));
+
+            // Mark this team as winner
+            teamDiv.classList.add('selected', 'winner');
+
+            // Advance to next round
+            advanceTeam(teamData, conference, round, matchupIdx);
+        }
+
+        function advanceTeam(team, conference, round, matchupIdx) {
+            let nextRound, nextSlot;
+
+            if (round === 'wildcard') {
+                // For NFL, we reseed after Wild Card.
+                // We need to wait for all 3 WC winners in this conference.
+                recalcDivisionalMatchups(conference);
+
+            } else if (round === 'divisional') {
+                nextRound = 'conference';
+                nextSlot = matchupIdx; // 0 or 1
+                updateSlot(team, conference, nextRound, nextSlot);
+
+            } else if (round === 'conference') {
+                // Advance to Super Bowl
+                const sbSlot = conference === 'AFC' ? 0 : 1;
+                const sbTeam = document.querySelector(`[data-round="sb"][data-slot="${sbSlot}"]`);
+
+                sbTeam.className = 'team';
+                sbTeam.dataset.teamData = JSON.stringify(team);
+                sbTeam.innerHTML = `
+                    <div class="team-logo-container">
+                        <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                        <span class="seed">#${team.seed}</span>
+                    </div>
+                    <span class="team-name">${team.name}</span>
+                `;
+                sbTeam.onclick = () => selectSBTeam(sbTeam);
+
+            } else if (round === 'sb') {
+                // Champion!
+                const championDiv = document.querySelector('.champion-team');
+                championDiv.className = 'champion-team';
+                championDiv.innerHTML = `
+                    <span class="trophy">🏆</span>
+                    <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                    <span class="team-name">${team.name}</span>
+                    <span class="trophy">🏆</span>
+                `;
+                bracket.champion = team;
+            }
+        }
+
+        function recalcDivisionalMatchups(conference) {
+            // Find all 3 winners from the Wild Card round
+            const wcWinners = [];
+            const wcMatchups = document.querySelectorAll(`[data-conference="${conference}"][data-round="wildcard"]`);
+            
+            wcMatchups.forEach(el => {
+                if (el.classList.contains('winner')) {
+                    const data = JSON.parse(el.dataset.teamData);
+                    wcWinners.push(data);
+                }
+            });
+
+            // If we don't have 3 winners yet, we cannot determine matchups
+            if (wcWinners.length < 3) {
+                // Reset Divisional slots 1, 2, 3
+                updateSlot(null, conference, 'divisional', 1);
+                updateSlot(null, conference, 'divisional', 2);
+                updateSlot(null, conference, 'divisional', 3);
+                return;
+            }
+
+            // We have 3 winners. Sort them by seed (ascending: 1 is best, 7 is worst)
+            wcWinners.sort((a, b) => a.seed - b.seed);
+
+            // Lowest seed (highest number) plays #1 seed (Slot 0). So they go to Slot 1.
+            const lowestSeedTeam = wcWinners[wcWinners.length - 1];
+            
+            // The other two play each other.
+            // Best remaining seed (lowest number) goes to Slot 2 (Home).
+            // Middle remaining seed goes to Slot 3 (Away).
+            const bestRemaining = wcWinners[0];
+            const middleRemaining = wcWinners[1];
+
+            // Update slots
+            updateSlot(lowestSeedTeam, conference, 'divisional', 1);
+            updateSlot(bestRemaining, conference, 'divisional', 2);
+            updateSlot(middleRemaining, conference, 'divisional', 3);
+        }
+
+        function selectSBTeam(teamDiv) {
+            if (teamDiv.classList.contains('empty')) return;
+
+            const teamData = JSON.parse(teamDiv.dataset.teamData);
+            const slot = parseInt(teamDiv.dataset.slot);
+
+            // Remove selection from both teams
+            document.querySelectorAll('[data-round="sb"]').forEach(t =>
+                t.classList.remove('selected', 'winner')
+            );
+
+            // Mark winner
+            teamDiv.classList.add('selected', 'winner');
+
+            // Advance to champion
+            advanceTeam(teamData, teamDiv.dataset.conference, 'sb', 0);
+        }
+
+        function updateSlot(team, conference, round, slot) {
+            const slotDiv = document.querySelector(
+                `[data-conference="${conference}"][data-round="${round}"][data-slot="${slot}"]`
+            );
+
+            if (slotDiv) {
+                if (team) {
+                    slotDiv.className = 'team';
+                    slotDiv.dataset.teamData = JSON.stringify(team);
+                    slotDiv.innerHTML = `
+                        <div class="team-logo-container">
+                            <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                            <span class="seed">#${team.seed}</span>
+                        </div>
+                        <span class="team-name">${team.name}</span>
+                    `;
+                    slotDiv.onclick = () => selectTeam(slotDiv);
+                } else {
+                    // Reset to empty/TBD
+                    slotDiv.className = 'team empty';
+                    delete slotDiv.dataset.teamData;
+                    slotDiv.innerHTML = '<span>TBD</span>';
+                    slotDiv.onclick = null;
+                    
+                    // Also recursively clear any subsequent rounds if this slot was a winner there
+                    // But simply resetting this slot breaks the chain, which is sufficient visually.
+                    // Ideally we should clear the next round slot if it depended on this one.
+                    // For simplicity, we just leave the next round as is (it will be overwritten when we select again)
+                    // or we could clear it. Let's just clear this one for now.
+                }
+            }
+        }
+
+        function resetBracket() {
+            if (confirm('Are you sure you want to reset the bracket?')) {
+                // Clear all round containers
+                ['afc', 'nfc'].forEach(conf => {
+                    ['wc', 'div', 'conf'].forEach(round => {
+                        const container = document.getElementById(`${conf}-${round}-content`);
+                        if (container) container.innerHTML = '';
+                    });
+                });
+
+                // Reset Super Bowl slots
+                document.querySelectorAll('[data-round="sb"]').forEach(team => {
+                    team.className = 'team empty';
+                    team.innerHTML = team.dataset.slot === '0' ?
+                        '<span>AFC Champion</span>' :
+                        '<span>NFC Champion</span>';
+                    team.onclick = null;
+                });
+
+                // Reset Champion
+                const championDiv = document.querySelector('.champion-team');
+                championDiv.className = 'champion-team empty';
+                championDiv.innerHTML = '<span>TBD</span>';
+
+                // Reinitialize bracket
+                initBracket();
+            }
+        }
+
+        // CRC32 Table for PNG metadata
+        const crcTable = [];
+        for (let n = 0; n < 256; n++) {
+            let c = n;
+            for (let k = 0; k < 8; k++) {
+                if (c & 1) c = 0xedb88320 ^ (c >>> 1);
+                else c = c >>> 1;
+            }
+            crcTable[n] = c;
+        }
+
+        function crc32(buf) {
+            let c = 0xffffffff;
+            for (let i = 0; i < buf.length; i++) {
+                c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+            }
+            return c ^ 0xffffffff;
+        }
+
+        function addMetadataToPNG(pngBuffer, key, value) {
+            const keyBytes = new TextEncoder().encode(key);
+            const valueBytes = new TextEncoder().encode(value);
+            
+            // tEXt chunk: length (4) + 'tEXt' (4) + key + null (1) + value + crc (4)
+            const chunkLen = keyBytes.length + 1 + valueBytes.length;
+            const totalChunkLen = chunkLen + 12; // 4 len + 4 type + 4 crc
+            
+            const chunk = new Uint8Array(totalChunkLen);
+            const view = new DataView(chunk.buffer);
+            
+            // Length
+            view.setUint32(0, chunkLen);
+            
+            // Type
+            chunk.set([116, 69, 88, 116], 4); // 'tEXt'
+            
+            // Data
+            chunk.set(keyBytes, 8);
+            chunk[8 + keyBytes.length] = 0; // null separator
+            chunk.set(valueBytes, 8 + keyBytes.length + 1);
+            
+            // CRC (calculated over Type + Data)
+            const crc = crc32(chunk.slice(4, totalChunkLen - 4));
+            view.setUint32(totalChunkLen - 4, crc);
+            
+            // Insert after IHDR (standard PNG header is 33 bytes: 8 sig + 25 IHDR chunk)
+            const newPng = new Uint8Array(pngBuffer.byteLength + totalChunkLen);
+            newPng.set(new Uint8Array(pngBuffer.slice(0, 33)), 0);
+            newPng.set(chunk, 33);
+            newPng.set(new Uint8Array(pngBuffer.slice(33)), 33 + totalChunkLen);
+            
+            return newPng.buffer;
+        }
+
+        function getBracketState() {
+            const predictions = [];
+            
+            // Capture all teams that have advanced to Divisional, Conference, or Super Bowl rounds
+            document.querySelectorAll('.team[data-team-data]').forEach(el => {
+                if (el.classList.contains('empty')) return;
+                
+                const round = el.dataset.round;
+                // We only care about rounds that represent a user prediction/advancement
+                if (round === 'divisional' || round === 'conference' || round === 'sb') {
+                    const teamData = JSON.parse(el.dataset.teamData);
+                    predictions.push({
+                        round: round,
+                        conference: el.dataset.conference,
+                        slot: el.dataset.slot,
+                        team: teamData.abbr
+                    });
+                }
+            });
+
+            if (bracket.champion) {
+                predictions.push({
+                    round: 'champion',
+                    team: bracket.champion.abbr
+                });
+            }
+
+            return {
+                timestamp: new Date().toISOString(),
+                predictions: predictions
+            };
+        }
+
+        async function exportBracket() {
+            const bracketElement = document.getElementById('bracket');
+            const creatorInput = document.getElementById('creator-name');
+            const creatorName = creatorInput.value.trim() || 'Anonymous';
+
+            // Get current date and time
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            try {
+                // Create a temporary wrapper div that includes the bracket and creator info
+                const tempWrapper = document.createElement('div');
+                tempWrapper.style.backgroundColor = '#ffffff';
+                tempWrapper.style.padding = '30px';
+                tempWrapper.style.width = 'fit-content';
+
+                // Add title at the top
+                const title = document.createElement('h1');
+                title.style.textAlign = 'center';
+                title.style.color = '#013369';
+                title.style.fontFamily = 'Arial, sans-serif';
+                title.style.marginBottom = '20px';
+                title.style.fontSize = '28px';
+                title.textContent = 'NFL Playoff 2025-2026 Bracket Predictor';
+                tempWrapper.appendChild(title);
+
+                // Clone the bracket
+                const bracketClone = bracketElement.cloneNode(true);
+                tempWrapper.appendChild(bracketClone);
+
+                // Add creator info at the bottom
+                const creatorInfo = document.createElement('div');
+                creatorInfo.style.textAlign = 'center';
+                creatorInfo.style.marginTop = '20px';
+                creatorInfo.style.paddingTop = '15px';
+                creatorInfo.style.borderTop = '2px solid #eee';
+                creatorInfo.style.fontSize = '14px';
+                creatorInfo.style.color = '#666';
+                creatorInfo.style.fontFamily = 'Arial, sans-serif';
+                creatorInfo.innerHTML = `Created by <strong>${creatorName}</strong> on ${dateStr} at ${timeStr}`;
+                tempWrapper.appendChild(creatorInfo);
+
+                // Temporarily add to DOM
+                document.body.appendChild(tempWrapper);
+
+                // Wait for all images to load before capturing
+                const images = tempWrapper.querySelectorAll('img');
+                await Promise.all(Array.from(images).map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = resolve; // Still resolve even if image fails
+                    });
+                }));
+
+                const canvas = await html2canvas(tempWrapper, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: false
+                });
+
+                // Remove temporary wrapper
+                document.body.removeChild(tempWrapper);
+
+                canvas.toBlob(async (blob) => {
+                    // Inject metadata
+                    try {
+                        const buffer = await blob.arrayBuffer();
+                        const state = getBracketState();
+                        // Add creator name to state
+                        state.creator = creatorName;
+                        
+                        const jsonStr = JSON.stringify(state);
+                        const newBuffer = addMetadataToPNG(buffer, "nflBracketData", jsonStr);
+                        const newBlob = new Blob([newBuffer], { type: 'image/png' });
+                        
+                        const url = URL.createObjectURL(newBlob);
+                        const link = document.createElement('a');
+                        link.download = 'nfl-playoff-bracket-2026.png';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    } catch (e) {
+                        console.error('Metadata injection failed, falling back to simple download', e);
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = 'nfl-playoff-bracket-2026.png';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Failed to export bracket. Please try again.');
+            }
+        }
+
+        // Initialize on load
+        initBracket();
+    </script>
+</body>
+</html>
