@@ -1,3 +1,4 @@
+// Version: 2026-01-06-v2
 import { neon } from '@neondatabase/serverless';
 
 export default async (req) => {
