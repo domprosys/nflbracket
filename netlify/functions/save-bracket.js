@@ -54,7 +54,7 @@ export default async (req) => {
     try {
       const result = await sql`
         INSERT INTO predictions (creator, predictions, created_at)
-        VALUES (${creator}, ${predictions}, ${timestamp})
+        VALUES (${creator}, ${JSON.stringify(predictions)}::jsonb, ${timestamp})
         RETURNING id
       `;
       console.log('Insert successful, ID:', result[0].id);
