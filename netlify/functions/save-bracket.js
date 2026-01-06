@@ -23,9 +23,17 @@ export default async (req) => {
     }
 
     console.log('Database URL configured, initializing client...');
-    const sql = neon(connectionString);
+    
+    // Sometimes channel_binding=require causes issues in serverless environments
+    const sanitizedConnectionString = connectionString.replace('channel_binding=require&', '').replace('&channel_binding=require', '').replace('?channel_binding=require', '?');
+    
+    const sql = neon(sanitizedConnectionString);
 
     try {
+      console.log('Testing connection with simple query...');
+      const testResult = await sql`SELECT 1 as connected`;
+      console.log('Connection test successful:', testResult);
+      
       console.log('Checking/Creating table...');
       await sql`
         CREATE TABLE IF NOT EXISTS predictions (
@@ -36,9 +44,9 @@ export default async (req) => {
         )
       `;
       console.log('Table check complete.');
-    } catch (tableError) {
-      console.error('Error creating table:', tableError);
-      throw tableError;
+    } catch (connError) {
+      console.error('Initial connection or table check failed:', connError);
+      throw connError;
     }
 
     // Insert prediction
