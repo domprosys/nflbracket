@@ -1,4 +1,4 @@
-// Version: 2026-01-06-v2
+// Version: 2026-01-06-v3
 import { neon } from '@neondatabase/serverless';
 
 export default async (req) => {
@@ -25,14 +25,16 @@ export default async (req) => {
     const sanitizedConnectionString = connectionString.replace('channel_binding=require&', '').replace('&channel_binding=require', '').replace('?channel_binding=require', '?');
     const sql = neon(sanitizedConnectionString);
 
-    // Insert prediction - pass object directly, Neon driver handles JSONB serialization
+    // Insert prediction using raw query with explicit JSONB cast
     console.log('Attempting to insert prediction for creator:', creator);
+    const predictionsJsonString = JSON.stringify(predictions);
+    console.log('Predictions as JSON string:', predictionsJsonString);
     
-    const result = await sql`
-      INSERT INTO predictions (creator, predictions, created_at)
-      VALUES (${creator}, ${predictions}, ${timestamp})
-      RETURNING id
-    `;
+    // Use parameterized query - $1, $2, $3 are placeholders
+    const result = await sql(
+      'INSERT INTO predictions (creator, predictions, created_at) VALUES ($1, $2::jsonb, $3) RETURNING id',
+      [creator, predictionsJsonString, timestamp]
+    );
     console.log('Insert successful, ID:', result[0].id);
 
     return new Response(JSON.stringify({ success: true, id: result[0].id }), {
