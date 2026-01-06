@@ -22,30 +22,42 @@ export default async (req) => {
       });
     }
 
+    console.log('Database URL configured, initializing client...');
     const sql = neon(connectionString);
 
-    // Ensure table exists (you might want to do this manually or in a migration)
-    await sql`
-      CREATE TABLE IF NOT EXISTS predictions (
-        id SERIAL PRIMARY KEY,
-        creator TEXT,
-        predictions JSONB,
-        created_at TIMESTAMP
-      )
-    `;
+    try {
+      console.log('Checking/Creating table...');
+      await sql`
+        CREATE TABLE IF NOT EXISTS predictions (
+          id SERIAL PRIMARY KEY,
+          creator TEXT,
+          predictions JSONB,
+          created_at TIMESTAMP
+        )
+      `;
+      console.log('Table check complete.');
+    } catch (tableError) {
+      console.error('Error creating table:', tableError);
+      throw tableError;
+    }
 
     // Insert prediction
-    console.log('Inserting into database...');
-    const result = await sql`
-      INSERT INTO predictions (creator, predictions, created_at)
-      VALUES (${creator}, ${predictions}, ${timestamp})
-      RETURNING id
-    `;
-    console.log('Insert successful, ID:', result[0].id);
+    console.log('Attempting INSERT...');
+    try {
+      const result = await sql`
+        INSERT INTO predictions (creator, predictions, created_at)
+        VALUES (${creator}, ${predictions}, ${timestamp})
+        RETURNING id
+      `;
+      console.log('Insert successful, ID:', result[0].id);
 
-    return new Response(JSON.stringify({ success: true, id: result[0].id }), {
-      headers: { "Content-Type": "application/json" }
-    });
+      return new Response(JSON.stringify({ success: true, id: result[0].id }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (insertError) {
+      console.error('Error during INSERT:', insertError);
+      throw insertError;
+    }
   } catch (error) {
     console.error('Database error:', error);
     return new Response(JSON.stringify({ error: 'Failed to save prediction' }), {
