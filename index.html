@@ -1035,7 +1035,17 @@
             const creatorInput = document.getElementById('creator-name');
             const creatorName = creatorInput.value.trim() || 'Anonymous';
 
-            // Get current date and time
+            const state = getBracketState();
+            state.creator = creatorName;
+
+            // Save to database immediately (don't wait for image generation)
+            fetch('/.netlify/functions/save-bracket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state)
+            }).catch(e => console.error('Database save failed:', e));
+
+            // Get current date and time for the image overlay
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -1108,18 +1118,10 @@
                     // Inject metadata
                     try {
                         const buffer = await blob.arrayBuffer();
-                        const state = getBracketState();
-                        // Add creator name to state
-                        state.creator = creatorName;
-
-                        // Save to database
-                        fetch('/.netlify/functions/save-bracket', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(state)
-                        }).catch(e => console.error('Database save failed:', e));
+                        const stateForMetadata = getBracketState();
+                        stateForMetadata.creator = creatorName;
                         
-                        const jsonStr = JSON.stringify(state);
+                        const jsonStr = JSON.stringify(stateForMetadata);
                         const newBuffer = addMetadataToPNG(buffer, "nflBracketData", jsonStr);
                         const newBlob = new Blob([newBuffer], { type: 'image/png' });
                         
