@@ -422,26 +422,44 @@
             box-shadow: none;
         }
 
-        .connector {
-            position: absolute;
-            width: 30px;
-            height: 2px;
-            background: #ddd;
-            right: -30px;
-            top: 50%;
-            transform: translateY(-50%);
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
-        .scroll-indicator {
+        .loading-overlay {
             display: none;
-            text-align: center;
-            background: #e3f2fd;
-            color: #013369;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            font-size: 0.9em;
+            color: #013369;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #013369;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         @media (max-width: 1500px) {
@@ -511,6 +529,10 @@
 </head>
 <body>
     <div class="container">
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <div>Generating your bracket...</div>
+        </div>
         <div class="countdown-container">
             <div>Create your bracket before kickoff:</div>
             <div id="countdown" class="countdown-timer">
@@ -1087,14 +1109,21 @@
         }
 
         async function exportBracket() {
+            const downloadBtn = document.querySelector('button[onclick="exportBracket()"]');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
             const bracketElement = document.getElementById('bracket');
             const creatorInput = document.getElementById('creator-name');
             const creatorName = creatorInput.value.trim() || 'Anonymous';
 
+            // Set loading state
+            if (downloadBtn) downloadBtn.disabled = true;
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+
             const state = getBracketState();
             state.creator = creatorName;
 
-            // Save to database immediately (don't wait for image generation)
+            // Save to database immediately
             fetch('/.netlify/functions/save-bracket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1102,7 +1131,6 @@
             })
             .catch(e => console.error('Database save failed:', e));
 
-            // Get current date and time for the image overlay
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -1115,13 +1143,14 @@
             });
 
             try {
-                // Create a temporary wrapper div that includes the bracket and creator info
                 const tempWrapper = document.createElement('div');
                 tempWrapper.style.backgroundColor = '#ffffff';
                 tempWrapper.style.padding = '30px';
                 tempWrapper.style.width = 'fit-content';
+                tempWrapper.style.position = 'absolute';
+                tempWrapper.style.left = '-9999px';
+                tempWrapper.style.top = '0';
 
-                // Add title at the top
                 const title = document.createElement('h1');
                 title.style.textAlign = 'center';
                 title.style.color = '#013369';
@@ -1131,11 +1160,9 @@
                 title.textContent = 'NFL Playoff 2025-2026 Bracket Predictor';
                 tempWrapper.appendChild(title);
 
-                // Clone the bracket
                 const bracketClone = bracketElement.cloneNode(true);
                 tempWrapper.appendChild(bracketClone);
 
-                // Add creator info at the bottom
                 const creatorInfo = document.createElement('div');
                 creatorInfo.style.textAlign = 'center';
                 creatorInfo.style.marginTop = '20px';
@@ -1147,16 +1174,14 @@
                 creatorInfo.innerHTML = `Created by <strong>${creatorName}</strong> on ${dateStr} at ${timeStr}`;
                 tempWrapper.appendChild(creatorInfo);
 
-                // Temporarily add to DOM
                 document.body.appendChild(tempWrapper);
 
-                // Wait for all images to load before capturing
                 const images = tempWrapper.querySelectorAll('img');
                 await Promise.all(Array.from(images).map(img => {
                     if (img.complete) return Promise.resolve();
-                    return new Promise((resolve, reject) => {
+                    return new Promise((resolve) => {
                         img.onload = resolve;
-                        img.onerror = resolve; // Still resolve even if image fails
+                        img.onerror = resolve;
                     });
                 }));
 
@@ -1165,14 +1190,16 @@
                     backgroundColor: '#ffffff',
                     logging: false,
                     useCORS: true,
-                    allowTaint: false
+                    allowTaint: false,
+                    windowWidth: tempWrapper.scrollWidth + 60,
+                    windowHeight: tempWrapper.scrollHeight + 60
                 });
 
-                // Remove temporary wrapper
                 document.body.removeChild(tempWrapper);
 
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
                 canvas.toBlob(async (blob) => {
-                    // Inject metadata
                     try {
                         const buffer = await blob.arrayBuffer();
                         const stateForMetadata = getBracketState();
@@ -1183,24 +1210,57 @@
                         const newBlob = new Blob([newBuffer], { type: 'image/png' });
                         
                         const url = URL.createObjectURL(newBlob);
-                        const link = document.createElement('a');
-                        link.download = 'nfl-playoff-bracket-2026.png';
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
+                        
+                        if (isMobile) {
+                            // On mobile, sometimes direct download fails in embedded browsers.
+                            // Open the image in a new tab so they can long-press to save.
+                            const imgWindow = window.open('');
+                            if (imgWindow) {
+                                imgWindow.document.write(`
+                                    <html>
+                                        <head><title>Your NFL Bracket</title></head>
+                                        <body style="margin:0; display:flex; flex-direction:column; align-items:center; background:#333; color:white; font-family:sans-serif;">
+                                            <p style="padding:20px; text-align:center;">Long-press the image to Save to Photos</p>
+                                            <img src="${url}" style="max-width:100%; height:auto;">
+                                        </body>
+                                    </html>
+                                `);
+                            } else {
+                                // Fallback if popup blocked
+                                const link = document.createElement('a');
+                                link.download = 'nfl-playoff-bracket-2026.png';
+                                link.href = url;
+                                link.click();
+                            }
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = 'nfl-playoff-bracket-2026.png';
+                            link.href = url;
+                            link.click();
+                        }
+                        
+                        setTimeout(() => URL.revokeObjectURL(url), 10000);
                     } catch (e) {
-                        console.error('Metadata injection failed, falling back to simple download', e);
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = 'nfl-playoff-bracket-2026.png';
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
+                        console.error('Download failed:', e);
+                        const url = canvas.toDataURL('image/png');
+                        if (isMobile) {
+                            window.open(url);
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = 'nfl-playoff-bracket-2026.png';
+                            link.href = url;
+                            link.click();
+                        }
+                    } finally {
+                        if (downloadBtn) downloadBtn.disabled = false;
+                        if (loadingOverlay) loadingOverlay.classList.remove('active');
                     }
-                });
+                }, 'image/png');
             } catch (error) {
                 console.error('Export failed:', error);
                 alert('Failed to export bracket. Please try again.');
+                if (downloadBtn) downloadBtn.disabled = false;
+                if (loadingOverlay) loadingOverlay.classList.remove('active');
             }
         }
 
