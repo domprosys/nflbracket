@@ -1134,23 +1134,12 @@
             const state = getBracketState();
             state.creator = creatorName;
 
-            // Save to database immediately
+            // Save to database
             fetch('/.netlify/functions/save-bracket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
-            })
-            .then(response => {
-                console.log('Database save response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Database save response:', data);
-                if (!data.success) {
-                    console.error('Database save failed:', data.error, data.details);
-                }
-            })
-            .catch(e => console.error('Database save network error:', e));
+            }).catch(() => {});
 
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-US', {
