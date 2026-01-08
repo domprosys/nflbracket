@@ -140,6 +140,15 @@
             color: #999;
         }
 
+        .champion-team.predicted {
+            background: #e9ecef;
+            opacity: 0.8;
+        }
+
+        .champion-team.predicted .team-name {
+            color: #888;
+        }
+
         .stats-header {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -174,6 +183,30 @@
         .stats-item .label {
             font-size: 0.9em;
             color: #666;
+        }
+
+        .alive-box {
+            display: inline-block;
+            background: #013369;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .alive-box #alive-percentage {
+            font-size: 1.4em;
+        }
+
+        .stats-description {
+            color: #666;
+            font-size: 0.95em;
+            margin-top: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         header {
@@ -650,13 +683,11 @@
             <div>Generating your bracket...</div>
         </div>
         <div id="stats-header" class="stats-header" style="display: none;">
-            <h2>Prediction Results</h2>
-            <div class="stats-summary">
-                <div class="stats-item">
-                    <div class="value" id="alive-percentage">100%</div>
-                    <div class="label">Brackets Still Alive</div>
-                </div>
+            <h2>Welcome to NFL Romania #1 BATTLE ROYALE</h2>
+            <div class="alive-box">
+                <span id="alive-percentage">100%</span> Brackets Still Alive
             </div>
+            <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes.</p>
         </div>
 
         <div class="countdown-container" id="countdown-container">
