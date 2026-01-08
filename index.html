@@ -1406,16 +1406,25 @@
                 document.getElementById('total-brackets').textContent = data.totalBrackets;
 
                 // Display stats on Wild Card teams
-                displayWildCardStats(data.stats);
+                displayWildCardStats(data.wcStats);
 
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
             }
         }
 
-        function displayWildCardStats(stats) {
-            // For each WC team, find what % of brackets picked them to advance to divisional
-            // We need to search across all divisional slots (1, 2, 3) since reseeding changes slots
+        // Map team seeds to WC matchup IDs
+        // Matchup 0: #2 vs #7, Matchup 1: #3 vs #6, Matchup 2: #4 vs #5
+        function getWcMatchupId(seed) {
+            if (seed === 2 || seed === 7) return 0;
+            if (seed === 3 || seed === 6) return 1;
+            if (seed === 4 || seed === 5) return 2;
+            return -1; // #1 seed has bye
+        }
+
+        function displayWildCardStats(wcStats) {
+            // wcStats structure: { "AFC-0": { "NE": 60, "LAC": 40 }, ... }
+            // Matchup 0 = #2 vs #7, Matchup 1 = #3 vs #6, Matchup 2 = #4 vs #5
 
             ['AFC', 'NFC'].forEach(conference => {
                 // Get all Wild Card teams (not the bye team)
@@ -1427,15 +1436,16 @@
                     if (!teamDiv.dataset.teamData) return;
 
                     const teamData = JSON.parse(teamDiv.dataset.teamData);
+                    const matchupId = getWcMatchupId(teamData.seed);
+                    
+                    if (matchupId === -1) return; // Skip bye team
 
-                    // Search all divisional slots for this team's percentage
+                    const statsKey = `${conference}-${matchupId}`;
+                    const matchupStats = wcStats[statsKey];
+
                     let percentage = 0;
-                    for (let slot = 1; slot <= 3; slot++) {
-                        const statsKey = `${conference}-divisional-${slot}`;
-                        const teamStats = stats[statsKey];
-                        if (teamStats && teamStats[teamData.abbr]) {
-                            percentage += teamStats[teamData.abbr];
-                        }
+                    if (matchupStats && matchupStats[teamData.abbr]) {
+                        percentage = matchupStats[teamData.abbr];
                     }
 
                     // Add percentage badge
