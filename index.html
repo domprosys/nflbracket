@@ -1443,8 +1443,8 @@
             // Show stats header
             document.getElementById('stats-header').style.display = 'block';
 
-            // Update header text
-            document.querySelector('header p').textContent = 'See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance.';
+            // Hide the original header
+            document.querySelector('header').style.display = 'none';
 
             // Disable all team click handlers
             document.querySelectorAll('.team').forEach(team => {
