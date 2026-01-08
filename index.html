@@ -620,12 +620,8 @@
             <h2>Prediction Results</h2>
             <div class="stats-summary">
                 <div class="stats-item">
-                    <div class="value" id="total-brackets">0</div>
-                    <div class="label">Total Brackets</div>
-                </div>
-                <div class="stats-item">
-                    <div class="value" id="alive-brackets">0</div>
-                    <div class="label">Still Alive</div>
+                    <div class="value" id="alive-percentage">100%</div>
+                    <div class="label">Brackets Still Alive</div>
                 </div>
             </div>
         </div>
@@ -1401,9 +1397,6 @@
                     console.error('Stats error:', data.error);
                     return;
                 }
-
-                // Update total brackets count
-                document.getElementById('total-brackets').textContent = data.totalBrackets;
 
                 // Display stats on Wild Card teams
                 displayWildCardStats(data.wcStats);
