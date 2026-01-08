@@ -1414,9 +1414,8 @@
         }
 
         function displayWildCardStats(stats) {
-            // Wild Card matchups map to divisional slots
-            // AFC: divisional slot 1 = WC matchup #2vs#7, slot 2/3 = other WC matchups
-            // We need to show % on each Wild Card team based on who was picked to advance
+            // For each WC team, find what % of brackets picked them to advance to divisional
+            // We need to search across all divisional slots (1, 2, 3) since reseeding changes slots
 
             ['AFC', 'NFC'].forEach(conference => {
                 // Get all Wild Card teams (not the bye team)
@@ -1428,23 +1427,15 @@
                     if (!teamDiv.dataset.teamData) return;
 
                     const teamData = JSON.parse(teamDiv.dataset.teamData);
-                    const slot = parseInt(teamDiv.dataset.slot);
 
-                    // Map WC slot to divisional slot
-                    // WC slots 0,1 -> div slot 1 (matchup #2 vs #7)
-                    // WC slots 2,3 -> div slot 2 (matchup #3 vs #6, home team)
-                    // WC slots 4,5 -> div slot 3 (matchup #4 vs #5)
-                    let divSlot;
-                    if (slot <= 1) divSlot = 1;
-                    else if (slot <= 3) divSlot = 2;
-                    else divSlot = 3;
-
-                    const statsKey = `${conference}-divisional-${divSlot}`;
-                    const teamStats = stats[statsKey];
-
+                    // Search all divisional slots for this team's percentage
                     let percentage = 0;
-                    if (teamStats && teamStats[teamData.abbr]) {
-                        percentage = teamStats[teamData.abbr];
+                    for (let slot = 1; slot <= 3; slot++) {
+                        const statsKey = `${conference}-divisional-${slot}`;
+                        const teamStats = stats[statsKey];
+                        if (teamStats && teamStats[teamData.abbr]) {
+                            percentage += teamStats[teamData.abbr];
+                        }
                     }
 
                     // Add percentage badge

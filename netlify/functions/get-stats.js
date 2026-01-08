@@ -69,6 +69,9 @@ export default async (req) => {
       championPercentages[team] = Math.round((championCounts[team] / totalBrackets) * 100);
     }
 
+    console.log('Stats computed:', JSON.stringify(percentages));
+    console.log('Champion stats:', JSON.stringify(championPercentages));
+
     return new Response(JSON.stringify({ 
       totalBrackets,
       stats: percentages,
