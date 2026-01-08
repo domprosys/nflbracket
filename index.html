@@ -128,6 +128,18 @@
             color: #999;
         }
 
+        .team.predicted {
+            opacity: 0.7;
+        }
+
+        .team.predicted .team-name {
+            color: #888;
+        }
+
+        .team.predicted .seed {
+            color: #999;
+        }
+
         .stats-header {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -1425,6 +1437,12 @@
                 // Compute and display divisional stats
                 displayDivisionalStats(data.roundCounts);
 
+                // Compute and display conference stats
+                displayConferenceStats(data.roundCounts);
+
+                // Compute and display Super Bowl stats
+                displaySuperBowlStats(data.champion);
+
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
             }
@@ -1495,8 +1513,8 @@
                         percentage = matchupStats[teamData.abbr];
                     }
 
-                    // Add percentage badge
-                    addStatsBadge(teamDiv, percentage);
+                    // Add percentage badge with score (Wild Card only)
+                    addStatsBadge(teamDiv, percentage, true);
                 });
 
                 // Advance winners to divisional round
@@ -1525,13 +1543,13 @@
             updateSlotWithStats(middleRemaining, conference, 'divisional', 3);
         }
 
-        function updateSlotWithStats(team, conference, round, slot) {
+        function updateSlotWithStats(team, conference, round, slot, isPredicted = true) {
             const selector = `[data-conference="${conference}"][data-round="${round}"][data-slot="${slot}"]`;
             const slotDiv = document.querySelector(selector);
             
             if (!slotDiv) return;
 
-            slotDiv.className = 'team';
+            slotDiv.className = isPredicted ? 'team predicted' : 'team';
             slotDiv.dataset.teamData = JSON.stringify(team);
             slotDiv.innerHTML = `
                 <div class="team-logo-container">
@@ -1581,9 +1599,9 @@
                     const pct1 = total > 0 ? Math.round((count1 / total) * 100) : 0;
                     const pct2 = total > 0 ? Math.round((count2 / total) * 100) : 0;
 
-                    // Add stats badges
-                    addStatsBadge(team1Div, pct1);
-                    addStatsBadge(team2Div, pct2);
+                    // Add stats badges (no scores for divisional)
+                    addStatsBadge(team1Div, pct1, false);
+                    addStatsBadge(team2Div, pct2, false);
 
                     // Advance winner to conference round
                     if (pct1 > pct2) {
@@ -1596,10 +1614,108 @@
         }
 
         function advanceToConference(team, conference, slot) {
-            updateSlotWithStats(team, conference, 'conference', slot);
+            updateSlotWithStats(team, conference, 'conference', slot, true);
         }
 
-        function addStatsBadge(teamDiv, percentage) {
+        function displayConferenceStats(roundCounts) {
+            const sbCounts = roundCounts.sb || {};
+
+            ['AFC', 'NFC'].forEach(conference => {
+                // Conference matchup: slot 0 vs slot 1
+                const team1Div = document.querySelector(
+                    `[data-conference="${conference}"][data-round="conference"][data-slot="0"]`
+                );
+                const team2Div = document.querySelector(
+                    `[data-conference="${conference}"][data-round="conference"][data-slot="1"]`
+                );
+
+                if (!team1Div || !team2Div) return;
+                if (!team1Div.dataset.teamData || !team2Div.dataset.teamData) return;
+
+                const team1Data = JSON.parse(team1Div.dataset.teamData);
+                const team2Data = JSON.parse(team2Div.dataset.teamData);
+
+                // Get counts from SB round (who advanced from conference)
+                const count1 = sbCounts[team1Data.abbr] || 0;
+                const count2 = sbCounts[team2Data.abbr] || 0;
+                const total = count1 + count2;
+
+                const pct1 = total > 0 ? Math.round((count1 / total) * 100) : 0;
+                const pct2 = total > 0 ? Math.round((count2 / total) * 100) : 0;
+
+                // Add stats badges (no scores)
+                addStatsBadge(team1Div, pct1, false);
+                addStatsBadge(team2Div, pct2, false);
+
+                // Advance winner to Super Bowl
+                if (pct1 > pct2) {
+                    advanceToSuperBowl(team1Data, conference);
+                } else if (pct2 > pct1) {
+                    advanceToSuperBowl(team2Data, conference);
+                }
+            });
+        }
+
+        function advanceToSuperBowl(team, conference) {
+            const sbSlot = conference === 'AFC' ? 0 : 1;
+            const sbTeam = document.querySelector(`[data-round="sb"][data-slot="${sbSlot}"]`);
+
+            if (!sbTeam) return;
+
+            sbTeam.className = 'team predicted';
+            sbTeam.dataset.teamData = JSON.stringify(team);
+            sbTeam.dataset.conference = conference.toLowerCase();
+            sbTeam.innerHTML = `
+                <div class="team-logo-container">
+                    <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                    <span class="seed">#${team.seed}</span>
+                </div>
+                <span class="team-name">${team.name}</span>
+            `;
+        }
+
+        function displaySuperBowlStats(championStats) {
+            const afcTeamDiv = document.querySelector('[data-round="sb"][data-slot="0"]');
+            const nfcTeamDiv = document.querySelector('[data-round="sb"][data-slot="1"]');
+
+            if (!afcTeamDiv || !nfcTeamDiv) return;
+            if (!afcTeamDiv.dataset.teamData || !nfcTeamDiv.dataset.teamData) return;
+
+            const afcTeam = JSON.parse(afcTeamDiv.dataset.teamData);
+            const nfcTeam = JSON.parse(nfcTeamDiv.dataset.teamData);
+
+            // Get champion counts for these two teams
+            const afcCount = championStats[afcTeam.abbr] || 0;
+            const nfcCount = championStats[nfcTeam.abbr] || 0;
+            const total = afcCount + nfcCount;
+
+            const afcPct = total > 0 ? Math.round((afcCount / total) * 100) : 0;
+            const nfcPct = total > 0 ? Math.round((nfcCount / total) * 100) : 0;
+
+            // Add stats badges (no scores)
+            addStatsBadge(afcTeamDiv, afcPct, false);
+            addStatsBadge(nfcTeamDiv, nfcPct, false);
+
+            // Advance winner to champion
+            if (afcPct > nfcPct) {
+                displayChampion(afcTeam);
+            } else if (nfcPct > afcPct) {
+                displayChampion(nfcTeam);
+            }
+        }
+
+        function displayChampion(team) {
+            const championDiv = document.querySelector('.champion-team');
+            if (!championDiv) return;
+
+            championDiv.className = 'champion-team predicted';
+            championDiv.innerHTML = `
+                <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.style.display='none'">
+                <span class="team-name">${team.name}</span>
+            `;
+        }
+
+        function addStatsBadge(teamDiv, percentage, showScore = false) {
             // Make team div position relative for absolute badge positioning
             teamDiv.style.position = 'relative';
 
@@ -1609,11 +1725,13 @@
             badge.textContent = percentage + '%';
             teamDiv.appendChild(badge);
 
-            // Add score display (right side) - mockup with 0 for now
-            const score = document.createElement('div');
-            score.className = 'team-score';
-            score.textContent = '0';
-            teamDiv.appendChild(score);
+            // Add score display (right side) - only for Wild Card
+            if (showScore) {
+                const score = document.createElement('div');
+                score.className = 'team-score';
+                score.textContent = '0';
+                teamDiv.appendChild(score);
+            }
         }
 
         // Countdown Timer Logic
