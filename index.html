@@ -1462,17 +1462,19 @@
                     return;
                 }
 
+                const totalBrackets = data.totalBrackets;
+
                 // Display stats on Wild Card teams and advance winners to divisional
                 displayWildCardStats(data.wcStats);
 
                 // Compute and display divisional stats
-                displayDivisionalStats(data.roundCounts);
+                displayDivisionalStats(data.roundCounts, totalBrackets);
 
                 // Compute and display conference stats
-                displayConferenceStats(data.roundCounts);
+                displayConferenceStats(data.roundCounts, totalBrackets);
 
                 // Compute and display Super Bowl stats
-                displaySuperBowlStats(data.champion);
+                displaySuperBowlStats(data.champion, totalBrackets);
 
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
@@ -1591,7 +1593,7 @@
             `;
         }
 
-        function displayDivisionalStats(roundCounts) {
+        function displayDivisionalStats(roundCounts, totalBrackets) {
             // Divisional matchups:
             // Matchup 0: #1 seed vs lowest remaining (slot 0 vs slot 1)
             // Matchup 1: best remaining vs middle remaining (slot 2 vs slot 3)
@@ -1623,21 +1625,21 @@
                     const team2Data = JSON.parse(team2Div.dataset.teamData);
 
                     // Get counts from conference round (who advanced from divisional)
+                    // Use percentage of ALL brackets, not normalized per-matchup
                     const count1 = confCounts[team1Data.abbr] || 0;
                     const count2 = confCounts[team2Data.abbr] || 0;
-                    const total = count1 + count2;
 
-                    const pct1 = total > 0 ? Math.round((count1 / total) * 100) : 0;
-                    const pct2 = total > 0 ? Math.round((count2 / total) * 100) : 0;
+                    const pct1 = totalBrackets > 0 ? Math.round((count1 / totalBrackets) * 100) : 0;
+                    const pct2 = totalBrackets > 0 ? Math.round((count2 / totalBrackets) * 100) : 0;
 
                     // Add stats badges (no scores for divisional)
                     addStatsBadge(team1Div, pct1, false);
                     addStatsBadge(team2Div, pct2, false);
 
-                    // Advance winner to conference round
-                    if (pct1 > pct2) {
+                    // Advance winner to conference round (based on raw count, not percentage)
+                    if (count1 > count2) {
                         advanceToConference(team1Data, conference, matchupIdx);
-                    } else if (pct2 > pct1) {
+                    } else if (count2 > count1) {
                         advanceToConference(team2Data, conference, matchupIdx);
                     }
                 });
@@ -1648,7 +1650,7 @@
             updateSlotWithStats(team, conference, 'conference', slot, true);
         }
 
-        function displayConferenceStats(roundCounts) {
+        function displayConferenceStats(roundCounts, totalBrackets) {
             const sbCounts = roundCounts.sb || {};
 
             ['AFC', 'NFC'].forEach(conference => {
@@ -1667,21 +1669,21 @@
                 const team2Data = JSON.parse(team2Div.dataset.teamData);
 
                 // Get counts from SB round (who advanced from conference)
+                // Use percentage of ALL brackets, not normalized per-matchup
                 const count1 = sbCounts[team1Data.abbr] || 0;
                 const count2 = sbCounts[team2Data.abbr] || 0;
-                const total = count1 + count2;
 
-                const pct1 = total > 0 ? Math.round((count1 / total) * 100) : 0;
-                const pct2 = total > 0 ? Math.round((count2 / total) * 100) : 0;
+                const pct1 = totalBrackets > 0 ? Math.round((count1 / totalBrackets) * 100) : 0;
+                const pct2 = totalBrackets > 0 ? Math.round((count2 / totalBrackets) * 100) : 0;
 
                 // Add stats badges (no scores)
                 addStatsBadge(team1Div, pct1, false);
                 addStatsBadge(team2Div, pct2, false);
 
-                // Advance winner to Super Bowl
-                if (pct1 > pct2) {
+                // Advance winner to Super Bowl (based on raw count)
+                if (count1 > count2) {
                     advanceToSuperBowl(team1Data, conference);
-                } else if (pct2 > pct1) {
+                } else if (count2 > count1) {
                     advanceToSuperBowl(team2Data, conference);
                 }
             });
@@ -1705,7 +1707,7 @@
             `;
         }
 
-        function displaySuperBowlStats(championStats) {
+        function displaySuperBowlStats(championStats, totalBrackets) {
             const afcTeamDiv = document.querySelector('[data-round="sb"][data-slot="0"]');
             const nfcTeamDiv = document.querySelector('[data-round="sb"][data-slot="1"]');
 
@@ -1716,21 +1718,21 @@
             const nfcTeam = JSON.parse(nfcTeamDiv.dataset.teamData);
 
             // Get champion counts for these two teams
+            // Use percentage of ALL brackets, not normalized per-matchup
             const afcCount = championStats[afcTeam.abbr] || 0;
             const nfcCount = championStats[nfcTeam.abbr] || 0;
-            const total = afcCount + nfcCount;
 
-            const afcPct = total > 0 ? Math.round((afcCount / total) * 100) : 0;
-            const nfcPct = total > 0 ? Math.round((nfcCount / total) * 100) : 0;
+            const afcPct = totalBrackets > 0 ? Math.round((afcCount / totalBrackets) * 100) : 0;
+            const nfcPct = totalBrackets > 0 ? Math.round((nfcCount / totalBrackets) * 100) : 0;
 
             // Add stats badges (no scores)
             addStatsBadge(afcTeamDiv, afcPct, false);
             addStatsBadge(nfcTeamDiv, nfcPct, false);
 
-            // Advance winner to champion
-            if (afcPct > nfcPct) {
+            // Advance winner to champion (based on raw count)
+            if (afcCount > nfcCount) {
                 displayChampion(afcTeam);
-            } else if (nfcPct > afcPct) {
+            } else if (nfcCount > afcCount) {
                 displayChampion(nfcTeam);
             }
         }
