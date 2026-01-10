@@ -1420,14 +1420,15 @@
             }
         }
 
-        // Check for stats mode
+        // Check for create mode (for results entry later)
         const urlParams = new URLSearchParams(window.location.search);
-        const statsMode = urlParams.get('mode') === 'stats';
+        const createMode = urlParams.get('mode') === 'create';
 
         // Initialize on load
         initBracket();
 
-        if (statsMode) {
+        // Stats mode is default, unless create mode is specified
+        if (!createMode) {
             enableStatsMode();
         }
 
