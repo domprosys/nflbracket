@@ -96,6 +96,14 @@
             z-index: 10;
         }
 
+        .stats-badge.higher {
+            background: #28a745;
+        }
+
+        .stats-badge.lower {
+            background: #dc3545;
+        }
+
         .team.winner .stats-badge {
             background: #28a745;
         }
@@ -1531,24 +1539,35 @@
                     `[data-conference="${conference}"][data-round="wildcard"]`
                 );
 
+                // Group teams by matchup for color coding
+                const matchupTeams = {};
                 wcTeams.forEach(teamDiv => {
                     if (!teamDiv.dataset.teamData) return;
-
                     const teamData = JSON.parse(teamDiv.dataset.teamData);
                     const matchupId = getWcMatchupId(teamData.seed);
+                    if (matchupId === -1) return;
                     
-                    if (matchupId === -1) return; // Skip bye team
+                    if (!matchupTeams[matchupId]) matchupTeams[matchupId] = [];
+                    matchupTeams[matchupId].push({ teamDiv, teamData });
+                });
+
+                // Process each matchup and color code badges
+                Object.keys(matchupTeams).forEach(matchupId => {
+                    const teams = matchupTeams[matchupId];
+                    if (teams.length !== 2) return;
 
                     const statsKey = `${conference}-${matchupId}`;
                     const matchupStats = wcStats[statsKey];
 
-                    let percentage = 0;
-                    if (matchupStats && matchupStats[teamData.abbr]) {
-                        percentage = matchupStats[teamData.abbr];
-                    }
+                    const team1 = teams[0];
+                    const team2 = teams[1];
+                    
+                    const pct1 = matchupStats?.[team1.teamData.abbr] || 0;
+                    const pct2 = matchupStats?.[team2.teamData.abbr] || 0;
 
-                    // Add percentage badge (no scores yet)
-                    addStatsBadge(teamDiv, percentage, false);
+                    // Add badges with color coding
+                    addStatsBadge(team1.teamDiv, pct1, false, pct1 > pct2 ? 'higher' : 'lower');
+                    addStatsBadge(team2.teamDiv, pct2, false, pct2 > pct1 ? 'higher' : 'lower');
                 });
 
                 // Advance winners to divisional round
@@ -1633,9 +1652,9 @@
                     const pct1 = totalBrackets > 0 ? Math.round((count1 / totalBrackets) * 100) : 0;
                     const pct2 = totalBrackets > 0 ? Math.round((count2 / totalBrackets) * 100) : 0;
 
-                    // Add stats badges (no scores for divisional)
-                    addStatsBadge(team1Div, pct1, false);
-                    addStatsBadge(team2Div, pct2, false);
+                    // Add stats badges with color coding (no scores for divisional)
+                    addStatsBadge(team1Div, pct1, false, pct1 > pct2 ? 'higher' : 'lower');
+                    addStatsBadge(team2Div, pct2, false, pct2 > pct1 ? 'higher' : 'lower');
 
                     // Advance winner to conference round (based on raw count, not percentage)
                     if (count1 > count2) {
@@ -1677,9 +1696,9 @@
                 const pct1 = totalBrackets > 0 ? Math.round((count1 / totalBrackets) * 100) : 0;
                 const pct2 = totalBrackets > 0 ? Math.round((count2 / totalBrackets) * 100) : 0;
 
-                // Add stats badges (no scores)
-                addStatsBadge(team1Div, pct1, false);
-                addStatsBadge(team2Div, pct2, false);
+                // Add stats badges with color coding (no scores)
+                addStatsBadge(team1Div, pct1, false, pct1 > pct2 ? 'higher' : 'lower');
+                addStatsBadge(team2Div, pct2, false, pct2 > pct1 ? 'higher' : 'lower');
 
                 // Advance winner to Super Bowl (based on raw count)
                 if (count1 > count2) {
@@ -1726,9 +1745,9 @@
             const afcPct = totalBrackets > 0 ? Math.round((afcCount / totalBrackets) * 100) : 0;
             const nfcPct = totalBrackets > 0 ? Math.round((nfcCount / totalBrackets) * 100) : 0;
 
-            // Add stats badges (no scores)
-            addStatsBadge(afcTeamDiv, afcPct, false);
-            addStatsBadge(nfcTeamDiv, nfcPct, false);
+            // Add stats badges with color coding (no scores)
+            addStatsBadge(afcTeamDiv, afcPct, false, afcPct > nfcPct ? 'higher' : 'lower');
+            addStatsBadge(nfcTeamDiv, nfcPct, false, nfcPct > afcPct ? 'higher' : 'lower');
 
             // Advance winner to champion (based on raw count)
             if (afcCount > nfcCount) {
@@ -1749,13 +1768,13 @@
             `;
         }
 
-        function addStatsBadge(teamDiv, percentage, showScore = false) {
+        function addStatsBadge(teamDiv, percentage, showScore = false, colorClass = '') {
             // Make team div position relative for absolute badge positioning
             teamDiv.style.position = 'relative';
 
             // Add percentage badge (top-left)
             const badge = document.createElement('div');
-            badge.className = 'stats-badge';
+            badge.className = 'stats-badge' + (colorClass ? ' ' + colorClass : '');
             badge.textContent = percentage + '%';
             teamDiv.appendChild(badge);
 
