@@ -709,7 +709,7 @@
         <div id="stats-header" class="stats-header" style="display: none;">
             <h2>Welcome to NFL Romania #1 BATTLE ROYALE</h2>
             <div class="alive-box">
-                <span id="alive-percentage">100%</span> Brackets Still Alive
+                <span id="alive-percentage">...</span> Brackets Still Alive
             </div>
             <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes. Check back after each game to see brackets get eliminated—incomplete ones will be removed after first game of the Wild Card round.</p>
         </div>
@@ -1463,12 +1463,12 @@
             const interval = setInterval(() => {
                 // Generate random 2-digit number (10-99)
                 const randomNum = Math.floor(Math.random() * 90) + 10;
-                element.textContent = randomNum;
+                element.textContent = randomNum + '%';
                 iterations++;
                 
                 if (iterations >= maxIterations) {
                     clearInterval(interval);
-                    element.textContent = finalValue;
+                    element.textContent = finalValue + '%';
                 }
             }, 50);
         }
