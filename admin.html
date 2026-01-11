@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Bracket Admin - Enter Results</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #013369;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .admin-key-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-key-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .admin-key-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .round-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .round-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #013369;
+        }
+
+        .matchup {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .matchup.completed {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+        }
+
+        .team-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .team-input .team-name {
+            font-weight: bold;
+            min-width: 100px;
+        }
+
+        .team-input input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .vs {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .submit-btn {
+            padding: 8px 16px;
+            background: #013369;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .submit-btn:hover {
+            background: #024a9e;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-left: 10px;
+            font-size: 14px;
+        }
+
+        .status.success {
+            color: #4caf50;
+        }
+
+        .status.error {
+            color: #f44336;
+        }
+
+        .winner-badge {
+            background: #4caf50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .conference-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stats-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .stats-link a {
+            color: #013369;
+            text-decoration: none;
+        }
+
+        .stats-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏈 NFL Bracket Admin</h1>
+
+        <div class="admin-key-section">
+            <label for="adminKey">Admin Key:</label>
+            <input type="password" id="adminKey" placeholder="Enter admin key">
+        </div>
+
+        <div class="round-section">
+            <h2>Wild Card Round</h2>
+            
+            <div class="conference-label">AFC</div>
+            <div class="matchup" data-round="wildcard" data-conference="AFC" data-matchup="0">
+                <div class="team-input">
+                    <span class="team-name" data-team="NE">#2 Patriots</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="LAC">#7 Chargers</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+
+            <div class="matchup" data-round="wildcard" data-conference="AFC" data-matchup="1">
+                <div class="team-input">
+                    <span class="team-name" data-team="JAX">#3 Jaguars</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="BUF">#6 Bills</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+
+            <div class="matchup" data-round="wildcard" data-conference="AFC" data-matchup="2">
+                <div class="team-input">
+                    <span class="team-name" data-team="PIT">#4 Steelers</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="HOU">#5 Texans</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+
+            <div class="conference-label" style="margin-top: 20px;">NFC</div>
+            <div class="matchup" data-round="wildcard" data-conference="NFC" data-matchup="0">
+                <div class="team-input">
+                    <span class="team-name" data-team="CHI">#2 Bears</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="GB">#7 Packers</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+
+            <div class="matchup" data-round="wildcard" data-conference="NFC" data-matchup="1">
+                <div class="team-input">
+                    <span class="team-name" data-team="PHI">#3 Eagles</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="SF">#6 49ers</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+
+            <div class="matchup" data-round="wildcard" data-conference="NFC" data-matchup="2">
+                <div class="team-input">
+                    <span class="team-name" data-team="CAR">#4 Panthers</span>
+                    <input type="number" class="score1" min="0" placeholder="0">
+                </div>
+                <span class="vs">vs</span>
+                <div class="team-input">
+                    <span class="team-name" data-team="LAR">#5 Rams</span>
+                    <input type="number" class="score2" min="0" placeholder="0">
+                </div>
+                <button class="submit-btn">Save</button>
+                <span class="status"></span>
+            </div>
+        </div>
+
+        <div class="stats-link">
+            <a href="/">← Back to Stats View</a>
+        </div>
+    </div>
+
+    <script>
+        // Load existing results on page load
+        async function loadResults() {
+            try {
+                const response = await fetch('/.netlify/functions/get-results');
+                const data = await response.json();
+                
+                if (data.results) {
+                    Object.keys(data.results).forEach(key => {
+                        const result = data.results[key];
+                        const [round, conference, matchupId] = key.split('-');
+                        
+                        const matchup = document.querySelector(
+                            `.matchup[data-round="${round}"][data-conference="${conference}"][data-matchup="${matchupId}"]`
+                        );
+                        
+                        if (matchup) {
+                            matchup.querySelector('.score1').value = result.score1;
+                            matchup.querySelector('.score2').value = result.score2;
+                            matchup.classList.add('completed');
+                            
+                            // Show winner badge
+                            const team1Name = matchup.querySelector('.team-input:first-child .team-name');
+                            const team2Name = matchup.querySelector('.team-input:last-of-type .team-name');
+                            
+                            if (team1Name.dataset.team === result.winner) {
+                                team1Name.innerHTML += '<span class="winner-badge">W</span>';
+                            } else {
+                                team2Name.innerHTML += '<span class="winner-badge">W</span>';
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load results:', error);
+            }
+        }
+
+        // Submit result
+        document.querySelectorAll('.submit-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const matchup = this.closest('.matchup');
+                const round = matchup.dataset.round;
+                const conference = matchup.dataset.conference;
+                const matchupId = parseInt(matchup.dataset.matchup);
+                
+                const team1 = matchup.querySelector('.team-input:first-child .team-name').dataset.team;
+                const team2 = matchup.querySelector('.team-input:last-of-type .team-name').dataset.team;
+                const score1 = parseInt(matchup.querySelector('.score1').value) || 0;
+                const score2 = parseInt(matchup.querySelector('.score2').value) || 0;
+                
+                const adminKey = document.getElementById('adminKey').value;
+                const status = matchup.querySelector('.status');
+                
+                if (!adminKey) {
+                    status.textContent = 'Enter admin key!';
+                    status.className = 'status error';
+                    return;
+                }
+
+                if (score1 === score2) {
+                    status.textContent = 'Scores cannot be equal!';
+                    status.className = 'status error';
+                    return;
+                }
+
+                this.disabled = true;
+                status.textContent = 'Saving...';
+                status.className = 'status';
+
+                try {
+                    const response = await fetch('/.netlify/functions/save-result', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            round,
+                            conference,
+                            matchupId,
+                            team1,
+                            team2,
+                            score1,
+                            score2,
+                            adminKey
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        status.textContent = '✓ Saved!';
+                        status.className = 'status success';
+                        matchup.classList.add('completed');
+                        
+                        // Reload to show winner badge
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        status.textContent = data.error || 'Failed';
+                        status.className = 'status error';
+                    }
+                } catch (error) {
+                    status.textContent = 'Error: ' + error.message;
+                    status.className = 'status error';
+                } finally {
+                    this.disabled = false;
+                }
+            });
+        });
+
+        // Load results on page load
+        loadResults();
+    </script>
+</body>
+</html>
