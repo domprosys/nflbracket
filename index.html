@@ -1456,6 +1456,23 @@
             enableStatsMode();
         }
 
+        function animateAlivePercentage(finalValue) {
+            const element = document.getElementById('alive-percentage');
+            let iterations = 0;
+            const maxIterations = 20;
+            const interval = setInterval(() => {
+                // Generate random 2-digit number (10-99)
+                const randomNum = Math.floor(Math.random() * 90) + 10;
+                element.textContent = randomNum;
+                iterations++;
+                
+                if (iterations >= maxIterations) {
+                    clearInterval(interval);
+                    element.textContent = finalValue;
+                }
+            }, 50);
+        }
+
         async function enableStatsMode() {
             // Add stats-mode class to body
             document.body.classList.add('stats-mode');
@@ -1489,8 +1506,8 @@
 
                 const totalBrackets = data.totalBrackets;
 
-                // Update alive percentage
-                document.getElementById('alive-percentage').textContent = data.alivePercentage + '%';
+                // Animate alive percentage with cycling numbers
+                animateAlivePercentage(data.alivePercentage);
 
                 // Display stats on Wild Card teams and advance winners to divisional
                 displayWildCardStats(data.wcStats, data.results);
