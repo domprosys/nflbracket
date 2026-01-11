@@ -220,8 +220,77 @@
             margin: 10px 0;
         }
 
-        .alive-box #alive-percentage {
+        .alive-box #alive-count {
             font-size: 1.4em;
+        }
+
+        .bracket-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .nav-btn {
+            background: #013369;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .nav-btn:hover {
+            background: #024a9e;
+        }
+
+        #bracket-position {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .bracket-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 10px 0;
+        }
+
+        .status-alive {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-eliminated {
+            background: #dc3545;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        #bracket-score {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .back-btn {
+            background: #6c757d !important;
+        }
+
+        .back-btn:hover {
+            background: #5a6268 !important;
         }
 
         .stats-description {
@@ -708,10 +777,26 @@
         </div>
         <div id="stats-header" class="stats-header" style="display: none;">
             <h2>Welcome to NFL Romania #1 BATTLE ROYALE</h2>
-            <div class="alive-box">
-                <span id="alive-percentage">...</span> Brackets Still Alive
+            <div class="alive-box" id="alive-box" style="cursor: pointer;" onclick="openBracketViewer()">
+                <span id="alive-count">...</span> Brackets Still Alive
             </div>
-            <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes. Check back after each game to see brackets get eliminated—incomplete ones will be removed after first game of the Wild Card round.</p>
+            <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes. <strong>Click the box above to browse individual brackets!</strong></p>
+        </div>
+
+        <div id="bracket-viewer-header" class="stats-header" style="display: none;">
+            <h2 id="bracket-creator-name">Bracket by: Anonymous</h2>
+            <div class="bracket-nav">
+                <button class="nav-btn" onclick="prevBracket()">← Previous</button>
+                <span id="bracket-position">1 / 67</span>
+                <button class="nav-btn" onclick="nextBracket()">Next →</button>
+            </div>
+            <div class="bracket-info">
+                <span id="bracket-status" class="status-alive">ALIVE</span>
+                <span id="bracket-score">Score: 0 pts</span>
+            </div>
+            <div class="alive-box back-btn" onclick="closeBracketViewer()" style="cursor: pointer;">
+                ← Back to Stats
+            </div>
         </div>
 
         <div class="countdown-container" id="countdown-container">
@@ -1456,21 +1541,209 @@
             enableStatsMode();
         }
 
-        function animateAlivePercentage(finalValue) {
-            const element = document.getElementById('alive-percentage');
+        function animateAliveCount(finalValue) {
+            const element = document.getElementById('alive-count');
             let iterations = 0;
             const maxIterations = 20;
             const interval = setInterval(() => {
                 // Generate random 2-digit number (10-99)
                 const randomNum = Math.floor(Math.random() * 90) + 10;
-                element.textContent = randomNum + '%';
+                element.textContent = randomNum;
                 iterations++;
                 
                 if (iterations >= maxIterations) {
                     clearInterval(interval);
-                    element.textContent = finalValue + '%';
+                    element.textContent = finalValue;
                 }
             }, 50);
+        }
+
+        // Bracket viewer state
+        let allBrackets = [];
+        let currentBracketIndex = 0;
+        let currentResults = {};
+        let isViewerMode = false;
+
+        async function openBracketViewer() {
+            // Fetch brackets data
+            try {
+                const response = await fetch('/.netlify/functions/get-brackets');
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Brackets error:', data.error);
+                    return;
+                }
+
+                allBrackets = data.brackets;
+                currentResults = data.results;
+                currentBracketIndex = 0;
+                isViewerMode = true;
+
+                // Switch headers
+                document.getElementById('stats-header').style.display = 'none';
+                document.getElementById('bracket-viewer-header').style.display = 'block';
+
+                // Display first bracket
+                displayBracket(currentBracketIndex);
+            } catch (error) {
+                console.error('Failed to load brackets:', error);
+            }
+        }
+
+        function closeBracketViewer() {
+            isViewerMode = false;
+            
+            // Switch headers back
+            document.getElementById('bracket-viewer-header').style.display = 'none';
+            document.getElementById('stats-header').style.display = 'block';
+
+            // Re-enable stats mode display
+            enableStatsMode();
+        }
+
+        function prevBracket() {
+            if (currentBracketIndex > 0) {
+                currentBracketIndex--;
+                displayBracket(currentBracketIndex);
+            }
+        }
+
+        function nextBracket() {
+            if (currentBracketIndex < allBrackets.length - 1) {
+                currentBracketIndex++;
+                displayBracket(currentBracketIndex);
+            }
+        }
+
+        function displayBracket(index) {
+            const bracket = allBrackets[index];
+            if (!bracket) return;
+
+            // Update header info
+            document.getElementById('bracket-creator-name').textContent = 'Bracket by: ' + bracket.creator;
+            document.getElementById('bracket-position').textContent = (index + 1) + ' / ' + allBrackets.length;
+            document.getElementById('bracket-score').textContent = 'Score: ' + bracket.score + ' pts';
+            
+            const statusEl = document.getElementById('bracket-status');
+            if (bracket.alive) {
+                statusEl.textContent = 'ALIVE';
+                statusEl.className = 'status-alive';
+            } else {
+                statusEl.textContent = 'ELIMINATED';
+                statusEl.className = 'status-eliminated';
+            }
+
+            // Clear existing bracket and rebuild with this user's predictions
+            resetBracketDisplay();
+            populateBracketFromPredictions(bracket.predictions);
+        }
+
+        function resetBracketDisplay() {
+            // Reset all team slots to empty state
+            document.querySelectorAll('[data-round="divisional"], [data-round="conference"], [data-round="sb"]').forEach(slot => {
+                if (slot.classList.contains('team')) {
+                    slot.className = 'team empty';
+                    slot.innerHTML = '<span>TBD</span>';
+                    slot.dataset.teamData = '';
+                }
+            });
+
+            // Reset champion
+            const championDiv = document.querySelector('.champion-team');
+            if (championDiv) {
+                championDiv.className = 'champion-team empty';
+                championDiv.innerHTML = '<span>TBD</span>';
+            }
+
+            // Remove any stats badges
+            document.querySelectorAll('.stats-badge, .team-score').forEach(el => el.remove());
+        }
+
+        function populateBracketFromPredictions(predictions) {
+            if (!Array.isArray(predictions)) return;
+
+            predictions.forEach(pred => {
+                const { round, conference, slot, team: teamAbbr } = pred;
+                
+                // Find the team data
+                let teamData = null;
+                for (const conf of ['AFC', 'NFC']) {
+                    const found = teams[conf].find(t => t.abbr === teamAbbr);
+                    if (found) {
+                        teamData = found;
+                        break;
+                    }
+                }
+                if (!teamData) return;
+
+                if (round === 'champion') {
+                    // Display champion
+                    const championDiv = document.querySelector('.champion-team');
+                    if (championDiv) {
+                        championDiv.className = 'champion-team';
+                        championDiv.innerHTML = `
+                            <span class="trophy">🏆</span>
+                            <img class="team-logo" src="${teamData.logo}" alt="${teamData.name}" onerror="this.style.display='none'">
+                            <span class="team-name">${teamData.name}</span>
+                        `;
+                    }
+                } else {
+                    // Find the slot
+                    const slotDiv = document.querySelector(
+                        `[data-conference="${conference}"][data-round="${round}"][data-slot="${slot}"]`
+                    );
+                    
+                    if (slotDiv) {
+                        slotDiv.className = 'team';
+                        slotDiv.innerHTML = `
+                            <span class="seed">${teamData.seed}</span>
+                            <img class="team-logo" src="${teamData.logo}" alt="${teamData.name}" onerror="this.style.display='none'">
+                            <span class="team-name">${teamData.name}</span>
+                        `;
+                        slotDiv.dataset.teamData = JSON.stringify(teamData);
+                    }
+                }
+            });
+
+            // Apply result styling to Wild Card teams
+            applyResultsToWildCard();
+        }
+
+        function applyResultsToWildCard() {
+            // Apply winner/loser styling to Wild Card based on results
+            for (const key in currentResults) {
+                const result = currentResults[key];
+                const [round, conference, matchupId] = key.split('-');
+                
+                if (round === 'wildcard') {
+                    // Find the Wild Card teams for this matchup
+                    const wcTeams = document.querySelectorAll(
+                        `[data-conference="${conference}"][data-round="wildcard"]`
+                    );
+                    
+                    wcTeams.forEach(teamDiv => {
+                        if (!teamDiv.dataset.teamData) return;
+                        const teamData = JSON.parse(teamDiv.dataset.teamData);
+                        const teamMatchupId = getWcMatchupId(teamData.seed);
+                        
+                        if (teamMatchupId === parseInt(matchupId)) {
+                            // Add score
+                            const score = document.createElement('div');
+                            score.className = 'team-score';
+                            score.textContent = teamData.abbr === result.team1 ? result.score1 : result.score2;
+                            teamDiv.appendChild(score);
+
+                            // Add winner/loser class
+                            if (teamData.abbr === result.winner) {
+                                teamDiv.classList.add('result-winner');
+                            } else {
+                                teamDiv.classList.add('result-loser');
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         async function enableStatsMode() {
@@ -1506,8 +1779,8 @@
 
                 const totalBrackets = data.totalBrackets;
 
-                // Animate alive percentage with cycling numbers
-                animateAlivePercentage(data.alivePercentage);
+                // Animate alive count with cycling numbers
+                animateAliveCount(data.aliveBrackets);
 
                 // Display stats on Wild Card teams and advance winners to divisional
                 displayWildCardStats(data.wcStats, data.results);
