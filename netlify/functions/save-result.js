@@ -1,5 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 
+// Points per round
+const POINTS = {
+  wildcard: 1,
+  divisional: 2,
+  conference: 4,
+  sb: 8,
+  champion: 16
+};
+
 export default async (req) => {
   // Only allow POST
   if (req.method !== 'POST') {
@@ -50,6 +59,13 @@ export default async (req) => {
       )
     `;
 
+    // Add score column to predictions table if it doesn't exist
+    try {
+      await sql`ALTER TABLE predictions ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0`;
+    } catch (e) {
+      // Column might already exist
+    }
+
     // Determine winner
     const winner = score1 > score2 ? team1 : team2;
 
@@ -66,10 +82,13 @@ export default async (req) => {
         winner = ${winner}
     `;
 
+    // Recalculate scores for all brackets
+    await recalculateAllScores(sql);
+
     return new Response(JSON.stringify({ 
       success: true,
       winner,
-      message: `Result saved: ${team1} ${score1} - ${score2} ${team2}`
+      message: `Result saved: ${team1} ${score1} - ${score2} ${team2}. Scores recalculated.`
     }), {
       headers: { "Content-Type": "application/json" }
     });
@@ -82,3 +101,60 @@ export default async (req) => {
     });
   }
 };
+
+async function recalculateAllScores(sql) {
+  // Get all results
+  const results = await sql`SELECT round, conference, matchup_id, team1, team2, winner FROM results`;
+  const resultsMap = {};
+  results.forEach(r => {
+    const key = `${r.round}-${r.conference}-${r.matchup_id}`;
+    resultsMap[key] = r;
+  });
+
+  // Get all predictions
+  const predictions = await sql`SELECT id, predictions FROM predictions`;
+
+  // Calculate score for each bracket
+  for (const row of predictions) {
+    const preds = row.predictions;
+    if (!Array.isArray(preds)) continue;
+
+    let score = 0;
+
+    for (const key in resultsMap) {
+      const result = resultsMap[key];
+      const [round] = key.split('-');
+
+      if (round === 'wildcard') {
+        const winnerInDivisional = preds.some(p => 
+          p.round === 'divisional' && p.team === result.winner
+        );
+        if (winnerInDivisional) score += POINTS.wildcard;
+      }
+
+      if (round === 'divisional') {
+        const winnerInConference = preds.some(p => 
+          p.round === 'conference' && p.team === result.winner
+        );
+        if (winnerInConference) score += POINTS.divisional;
+      }
+
+      if (round === 'conference') {
+        const winnerInSB = preds.some(p => 
+          p.round === 'sb' && p.team === result.winner
+        );
+        if (winnerInSB) score += POINTS.conference;
+      }
+
+      if (round === 'sb') {
+        const winnerIsChampion = preds.some(p => 
+          p.round === 'champion' && p.team === result.winner
+        );
+        if (winnerIsChampion) score += POINTS.sb + POINTS.champion;
+      }
+    }
+
+    // Update score in database
+    await sql`UPDATE predictions SET score = ${score} WHERE id = ${row.id}`;
+  }
+}

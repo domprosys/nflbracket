@@ -132,6 +132,38 @@
             color: #dc3545;
         }
 
+        .team.prediction-correct {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+        }
+
+        .team.prediction-wrong {
+            opacity: 0.6;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+        }
+
+        .team.prediction-wrong .team-name {
+            text-decoration: line-through;
+            color: #dc3545;
+        }
+
+        .champion-team.prediction-correct {
+            border: 3px solid #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+
+        .champion-team.prediction-wrong {
+            opacity: 0.6;
+            border: 3px solid #dc3545;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        }
+
+        .champion-team.prediction-wrong .team-name {
+            text-decoration: line-through;
+            color: #dc3545;
+        }
+
         .team-score {
             position: absolute;
             right: 8px;
@@ -292,6 +324,69 @@
         .back-btn:hover {
             background: #5a6268 !important;
         }
+
+        .alive-subtitle {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .leaderboard-list {
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: left;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .leaderboard-rank {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #013369;
+            min-width: 40px;
+        }
+
+        .leaderboard-rank.gold { color: #FFD700; }
+        .leaderboard-rank.silver { color: #C0C0C0; }
+        .leaderboard-rank.bronze { color: #CD7F32; }
+
+        .leaderboard-creator {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .leaderboard-score {
+            font-weight: bold;
+            color: #013369;
+            font-size: 1.1em;
+        }
+
+        .bracket-rank {
+            font-size: 3em;
+            font-weight: bold;
+            color: #013369;
+            margin-bottom: 5px;
+        }
+
+        .bracket-rank.gold { color: #FFD700; }
+        .bracket-rank.silver { color: #C0C0C0; }
+        .bracket-rank.bronze { color: #CD7F32; }
 
         .stats-description {
             color: #666;
@@ -777,25 +872,34 @@
         </div>
         <div id="stats-header" class="stats-header" style="display: none;">
             <h2>Welcome to NFL Romania #1 BATTLE ROYALE</h2>
-            <div class="alive-box" id="alive-box" style="cursor: pointer;" onclick="openBracketViewer()">
-                <span id="alive-count">...</span> Brackets Still Alive
+            <div class="alive-box" id="alive-box" style="cursor: pointer;" onclick="openLeaderboard()">
+                View Leaderboard
             </div>
-            <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes. <strong>Click the box above to browse individual brackets!</strong></p>
+            <div class="alive-subtitle"><span id="alive-count">0</span> brackets still alive</div>
+            <p class="stats-description">See how everyone predicted the 2025-2026 NFL Playoffs. Percentages show how many brackets picked each team to advance. <strong>Grey text indicates predicted advancement</strong> based on user votes. <strong>Click the box above to view the leaderboard!</strong></p>
+        </div>
+
+        <div id="leaderboard-header" class="stats-header" style="display: none;">
+            <h2>🏆 Leaderboard - Top 10</h2>
+            <div id="leaderboard-list" class="leaderboard-list"></div>
+            <div class="alive-box back-btn" onclick="closeLeaderboard()" style="cursor: pointer;">
+                ← Back to Stats
+            </div>
         </div>
 
         <div id="bracket-viewer-header" class="stats-header" style="display: none;">
+            <div class="bracket-rank" id="bracket-rank">#1</div>
             <h2 id="bracket-creator-name">Bracket by: Anonymous</h2>
             <div class="bracket-nav">
-                <button class="nav-btn" onclick="prevBracket()">← Previous</button>
-                <span id="bracket-position">1 / 67</span>
-                <button class="nav-btn" onclick="nextBracket()">Next →</button>
+                <button class="nav-btn" id="prev-btn" onclick="prevBracket()">← Previous</button>
+                <span id="bracket-position">1 / 10</span>
+                <button class="nav-btn" id="next-btn" onclick="nextBracket()">Next →</button>
             </div>
             <div class="bracket-info">
-                <span id="bracket-status" class="status-alive">ALIVE</span>
                 <span id="bracket-score">Score: 0 pts</span>
             </div>
-            <div class="alive-box back-btn" onclick="closeBracketViewer()" style="cursor: pointer;">
-                ← Back to Stats
+            <div class="alive-box back-btn" onclick="closeToLeaderboard()" style="cursor: pointer;">
+                ← Back to Leaderboard
             </div>
         </div>
 
@@ -1560,11 +1664,13 @@
 
         // Bracket viewer state
         let allBrackets = [];
+        let leaderboardBrackets = []; // Top 10 for navigation
         let currentBracketIndex = 0;
         let currentResults = {};
         let isViewerMode = false;
+        let isLeaderboardMode = false;
 
-        async function openBracketViewer() {
+        async function openLeaderboard() {
             // Fetch brackets data
             try {
                 const response = await fetch('/.netlify/functions/get-brackets');
@@ -1577,29 +1683,72 @@
 
                 allBrackets = data.brackets;
                 currentResults = data.results;
-                currentBracketIndex = 0;
-                isViewerMode = true;
+                
+                // Get top 10 for leaderboard
+                leaderboardBrackets = allBrackets.slice(0, 10);
+                isLeaderboardMode = true;
 
                 // Switch headers
                 document.getElementById('stats-header').style.display = 'none';
-                document.getElementById('bracket-viewer-header').style.display = 'block';
+                document.getElementById('leaderboard-header').style.display = 'block';
 
-                // Display first bracket
-                displayBracket(currentBracketIndex);
+                // Render leaderboard list
+                renderLeaderboard();
             } catch (error) {
                 console.error('Failed to load brackets:', error);
             }
         }
 
-        function closeBracketViewer() {
-            isViewerMode = false;
+        function renderLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '';
+
+            leaderboardBrackets.forEach((bracket, index) => {
+                const rank = index + 1;
+                const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+                
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.onclick = () => openBracketFromLeaderboard(index);
+                item.innerHTML = `
+                    <span class="leaderboard-rank ${rankClass}">#${rank}</span>
+                    <span class="leaderboard-creator">${bracket.creator}</span>
+                    <span class="leaderboard-score">${bracket.score} pts</span>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function closeLeaderboard() {
+            isLeaderboardMode = false;
             
             // Switch headers back
-            document.getElementById('bracket-viewer-header').style.display = 'none';
+            document.getElementById('leaderboard-header').style.display = 'none';
             document.getElementById('stats-header').style.display = 'block';
 
             // Re-enable stats mode display
             enableStatsMode();
+        }
+
+        function openBracketFromLeaderboard(index) {
+            currentBracketIndex = index;
+            isViewerMode = true;
+            isLeaderboardMode = false;
+
+            // Switch headers
+            document.getElementById('leaderboard-header').style.display = 'none';
+            document.getElementById('bracket-viewer-header').style.display = 'block';
+
+            // Display bracket
+            displayBracket(currentBracketIndex);
+        }
+
+        function closeToLeaderboard() {
+            isViewerMode = false;
+            
+            // Switch headers back
+            document.getElementById('bracket-viewer-header').style.display = 'none';
+            document.getElementById('leaderboard-header').style.display = 'block';
         }
 
         function prevBracket() {
@@ -1610,29 +1759,32 @@
         }
 
         function nextBracket() {
-            if (currentBracketIndex < allBrackets.length - 1) {
+            if (currentBracketIndex < leaderboardBrackets.length - 1) {
                 currentBracketIndex++;
                 displayBracket(currentBracketIndex);
             }
         }
 
         function displayBracket(index) {
-            const bracket = allBrackets[index];
+            const bracket = leaderboardBrackets[index];
             if (!bracket) return;
+
+            const rank = index + 1;
+            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+
+            // Update rank display
+            const rankEl = document.getElementById('bracket-rank');
+            rankEl.textContent = '#' + rank;
+            rankEl.className = 'bracket-rank ' + rankClass;
 
             // Update header info
             document.getElementById('bracket-creator-name').textContent = 'Bracket by: ' + bracket.creator;
-            document.getElementById('bracket-position').textContent = (index + 1) + ' / ' + allBrackets.length;
+            document.getElementById('bracket-position').textContent = rank + ' / ' + leaderboardBrackets.length;
             document.getElementById('bracket-score').textContent = 'Score: ' + bracket.score + ' pts';
-            
-            const statusEl = document.getElementById('bracket-status');
-            if (bracket.alive) {
-                statusEl.textContent = 'ALIVE';
-                statusEl.className = 'status-alive';
-            } else {
-                statusEl.textContent = 'ELIMINATED';
-                statusEl.className = 'status-eliminated';
-            }
+
+            // Show/hide navigation arrows based on position
+            document.getElementById('prev-btn').style.visibility = index === 0 ? 'hidden' : 'visible';
+            document.getElementById('next-btn').style.visibility = index === leaderboardBrackets.length - 1 ? 'hidden' : 'visible';
 
             // Clear existing bracket and rebuild with this user's predictions
             resetBracketDisplay();
@@ -1706,12 +1858,12 @@
                 }
             });
 
-            // Apply result styling to Wild Card teams
-            applyResultsToWildCard();
+            // Apply result styling to all rounds
+            applyResultsToBracket(predictions);
         }
 
-        function applyResultsToWildCard() {
-            // Apply winner/loser styling to Wild Card based on results
+        function applyResultsToBracket(predictions) {
+            // Apply winner/loser styling based on results for all rounds
             for (const key in currentResults) {
                 const result = currentResults[key];
                 const [round, conference, matchupId] = key.split('-');
@@ -1742,6 +1894,89 @@
                             }
                         }
                     });
+
+                    // Check if user predicted the WC winner correctly (winner should be in divisional)
+                    const predictedWinner = predictions.find(p => 
+                        p.round === 'divisional' && 
+                        p.conference === conference &&
+                        (p.team === result.team1 || p.team === result.team2)
+                    );
+                    
+                    if (predictedWinner) {
+                        // Find the divisional slot with this prediction
+                        const divSlot = document.querySelector(
+                            `[data-conference="${conference}"][data-round="divisional"][data-slot="${predictedWinner.slot}"]`
+                        );
+                        if (divSlot && divSlot.dataset.teamData) {
+                            const teamData = JSON.parse(divSlot.dataset.teamData);
+                            if (teamData.abbr === result.winner) {
+                                divSlot.classList.add('prediction-correct');
+                            } else {
+                                divSlot.classList.add('prediction-wrong');
+                            }
+                        }
+                    }
+                }
+
+                if (round === 'divisional') {
+                    // Check if user predicted the divisional winner correctly
+                    const predictedWinner = predictions.find(p => 
+                        p.round === 'conference' && 
+                        p.conference === conference &&
+                        (p.team === result.winner || p.team === result.team1 || p.team === result.team2)
+                    );
+                    
+                    if (predictedWinner) {
+                        const confSlot = document.querySelector(
+                            `[data-conference="${conference}"][data-round="conference"][data-slot="${predictedWinner.slot}"]`
+                        );
+                        if (confSlot && confSlot.dataset.teamData) {
+                            const teamData = JSON.parse(confSlot.dataset.teamData);
+                            if (teamData.abbr === result.winner) {
+                                confSlot.classList.add('prediction-correct');
+                            } else if (teamData.abbr === result.team1 || teamData.abbr === result.team2) {
+                                confSlot.classList.add('prediction-wrong');
+                            }
+                        }
+                    }
+                }
+
+                if (round === 'conference') {
+                    // Check if user predicted the conference winner correctly
+                    const predictedWinner = predictions.find(p => 
+                        p.round === 'sb' && 
+                        p.conference === conference
+                    );
+                    
+                    if (predictedWinner) {
+                        const sbSlot = document.querySelector(
+                            `[data-conference="${conference}"][data-round="sb"]`
+                        );
+                        if (sbSlot && sbSlot.dataset.teamData) {
+                            const teamData = JSON.parse(sbSlot.dataset.teamData);
+                            if (teamData.abbr === result.winner) {
+                                sbSlot.classList.add('prediction-correct');
+                            } else if (teamData.abbr === result.team1 || teamData.abbr === result.team2) {
+                                sbSlot.classList.add('prediction-wrong');
+                            }
+                        }
+                    }
+                }
+
+                if (round === 'sb') {
+                    // Check if user predicted the SB winner correctly
+                    const predictedChampion = predictions.find(p => p.round === 'champion');
+                    
+                    if (predictedChampion) {
+                        const championDiv = document.querySelector('.champion-team');
+                        if (championDiv) {
+                            if (predictedChampion.team === result.winner) {
+                                championDiv.classList.add('prediction-correct');
+                            } else {
+                                championDiv.classList.add('prediction-wrong');
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1786,10 +2021,10 @@
                 displayWildCardStats(data.wcStats, data.results);
 
                 // Compute and display divisional stats
-                displayDivisionalStats(data.roundCounts, totalBrackets);
+                displayDivisionalStats(data.roundCounts, totalBrackets, data.results);
 
                 // Compute and display conference stats
-                displayConferenceStats(data.roundCounts, totalBrackets);
+                displayConferenceStats(data.roundCounts, totalBrackets, data.results);
 
                 // Compute and display Super Bowl stats
                 displaySuperBowlStats(data.champion, totalBrackets);
@@ -1945,7 +2180,7 @@
             `;
         }
 
-        function displayDivisionalStats(roundCounts, totalBrackets) {
+        function displayDivisionalStats(roundCounts, totalBrackets, results) {
             // Divisional matchups:
             // Matchup 0: #1 seed vs lowest remaining (slot 0 vs slot 1)
             // Matchup 1: best remaining vs middle remaining (slot 2 vs slot 3)
@@ -1988,11 +2223,23 @@
                     addStatsBadge(team1Div, pct1, false, pct1 > pct2 ? 'higher' : 'lower');
                     addStatsBadge(team2Div, pct2, false, pct2 > pct1 ? 'higher' : 'lower');
 
-                    // Advance winner to conference round (based on raw count, not percentage)
-                    if (count1 > count2) {
-                        advanceToConference(team1Data, conference, matchupIdx);
-                    } else if (count2 > count1) {
-                        advanceToConference(team2Data, conference, matchupIdx);
+                    // Check for divisional result and apply styling
+                    const resultKey = `divisional-${conference}-${matchupIdx}`;
+                    const result = results?.[resultKey];
+                    
+                    if (result) {
+                        applyResultStyling(team1Div, team1Data.abbr, result);
+                        applyResultStyling(team2Div, team2Data.abbr, result);
+                        // Advance actual winner to conference
+                        const winnerData = result.winner === team1Data.abbr ? team1Data : team2Data;
+                        advanceToConference(winnerData, conference, matchupIdx);
+                    } else {
+                        // Advance predicted winner to conference round (based on raw count)
+                        if (count1 > count2) {
+                            advanceToConference(team1Data, conference, matchupIdx);
+                        } else if (count2 > count1) {
+                            advanceToConference(team2Data, conference, matchupIdx);
+                        }
                     }
                 });
             });
@@ -2002,7 +2249,7 @@
             updateSlotWithStats(team, conference, 'conference', slot, true);
         }
 
-        function displayConferenceStats(roundCounts, totalBrackets) {
+        function displayConferenceStats(roundCounts, totalBrackets, results) {
             const sbCounts = roundCounts.sb || {};
 
             ['AFC', 'NFC'].forEach(conference => {
@@ -2032,11 +2279,23 @@
                 addStatsBadge(team1Div, pct1, false, pct1 > pct2 ? 'higher' : 'lower');
                 addStatsBadge(team2Div, pct2, false, pct2 > pct1 ? 'higher' : 'lower');
 
-                // Advance winner to Super Bowl (based on raw count)
-                if (count1 > count2) {
-                    advanceToSuperBowl(team1Data, conference);
-                } else if (count2 > count1) {
-                    advanceToSuperBowl(team2Data, conference);
+                // Check for conference result and apply styling
+                const resultKey = `conference-${conference}-0`;
+                const result = results?.[resultKey];
+
+                if (result) {
+                    applyResultStyling(team1Div, team1Data.abbr, result);
+                    applyResultStyling(team2Div, team2Data.abbr, result);
+                    // Advance actual winner to Super Bowl
+                    const winnerData = result.winner === team1Data.abbr ? team1Data : team2Data;
+                    advanceToSuperBowl(winnerData, conference);
+                } else {
+                    // Advance predicted winner to Super Bowl (based on raw count)
+                    if (count1 > count2) {
+                        advanceToSuperBowl(team1Data, conference);
+                    } else if (count2 > count1) {
+                        advanceToSuperBowl(team2Data, conference);
+                    }
                 }
             });
         }

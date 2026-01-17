@@ -168,6 +168,12 @@
         .stats-link a:hover {
             text-decoration: underline;
         }
+
+        .loading-msg {
+            color: #666;
+            font-style: italic;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -269,6 +275,12 @@
             </div>
         </div>
 
+        <div class="round-section" id="divisional-section">
+            <h2>Divisional Round</h2>
+            <p class="loading-msg" id="divisional-loading">Loading matchups from Wild Card results...</p>
+            <div id="divisional-matchups"></div>
+        </div>
+
         <div class="stats-link">
             <a href="/">← Back to Stats View</a>
         </div>
@@ -307,6 +319,8 @@
                         }
                     });
                 }
+                // Generate Divisional matchups from Wild Card results
+                generateDivisionalMatchups(data.results || {});
             } catch (error) {
                 console.error('Failed to load results:', error);
             }
@@ -381,6 +395,196 @@
                 }
             });
         });
+
+        // Team data for display
+        const teamData = {
+            // AFC
+            'KC': { name: 'Chiefs', seed: 1 },
+            'NE': { name: 'Patriots', seed: 2 },
+            'JAX': { name: 'Jaguars', seed: 3 },
+            'PIT': { name: 'Steelers', seed: 4 },
+            'HOU': { name: 'Texans', seed: 5 },
+            'BUF': { name: 'Bills', seed: 6 },
+            'LAC': { name: 'Chargers', seed: 7 },
+            // NFC
+            'DET': { name: 'Lions', seed: 1 },
+            'CHI': { name: 'Bears', seed: 2 },
+            'PHI': { name: 'Eagles', seed: 3 },
+            'CAR': { name: 'Panthers', seed: 4 },
+            'LAR': { name: 'Rams', seed: 5 },
+            'SF': { name: '49ers', seed: 6 },
+            'GB': { name: 'Packers', seed: 7 }
+        };
+
+        // Generate Divisional matchups from Wild Card results
+        async function generateDivisionalMatchups(results) {
+            const divisionalContainer = document.getElementById('divisional-matchups');
+            const loadingMsg = document.getElementById('divisional-loading');
+            
+            // Get Wild Card winners for each conference
+            const afcWinners = [];
+            const nfcWinners = [];
+            
+            // Check if all Wild Card games are complete
+            let afcWcComplete = 0;
+            let nfcWcComplete = 0;
+            
+            for (const key in results) {
+                const [round, conference] = key.split('-');
+                if (round === 'wildcard') {
+                    const winner = results[key].winner;
+                    if (conference === 'AFC') {
+                        afcWinners.push(winner);
+                        afcWcComplete++;
+                    } else {
+                        nfcWinners.push(winner);
+                        nfcWcComplete++;
+                    }
+                }
+            }
+
+            // Need all 6 Wild Card games complete to generate Divisional
+            if (afcWcComplete < 3 || nfcWcComplete < 3) {
+                loadingMsg.textContent = 'Waiting for all Wild Card games to complete...';
+                return;
+            }
+
+            loadingMsg.style.display = 'none';
+
+            // Add #1 seeds (they had bye)
+            afcWinners.push('KC');
+            nfcWinners.push('DET');
+
+            // Sort by seed
+            afcWinners.sort((a, b) => teamData[a].seed - teamData[b].seed);
+            nfcWinners.sort((a, b) => teamData[a].seed - teamData[b].seed);
+
+            // Divisional matchups: #1 vs lowest seed, #2 vs highest remaining
+            // AFC: [0] is #1 seed, [3] is lowest remaining, [1] is #2, [2] is middle
+            const afcMatchups = [
+                { team1: afcWinners[0], team2: afcWinners[3], matchupId: 0 }, // #1 vs lowest
+                { team1: afcWinners[1], team2: afcWinners[2], matchupId: 1 }  // #2 vs middle
+            ];
+            const nfcMatchups = [
+                { team1: nfcWinners[0], team2: nfcWinners[3], matchupId: 0 },
+                { team1: nfcWinners[1], team2: nfcWinners[2], matchupId: 1 }
+            ];
+
+            // Generate HTML for AFC
+            let html = '<div class="conference-label">AFC</div>';
+            afcMatchups.forEach(m => {
+                const t1 = teamData[m.team1];
+                const t2 = teamData[m.team2];
+                html += createMatchupHTML('divisional', 'AFC', m.matchupId, m.team1, t1, m.team2, t2, results);
+            });
+
+            // Generate HTML for NFC
+            html += '<div class="conference-label" style="margin-top: 20px;">NFC</div>';
+            nfcMatchups.forEach(m => {
+                const t1 = teamData[m.team1];
+                const t2 = teamData[m.team2];
+                html += createMatchupHTML('divisional', 'NFC', m.matchupId, m.team1, t1, m.team2, t2, results);
+            });
+
+            divisionalContainer.innerHTML = html;
+
+            // Attach event listeners to new buttons
+            divisionalContainer.querySelectorAll('.submit-btn').forEach(btn => {
+                btn.addEventListener('click', handleSubmit);
+            });
+        }
+
+        function createMatchupHTML(round, conference, matchupId, team1Abbr, team1Data, team2Abbr, team2Data, results) {
+            const key = `${round}-${conference}-${matchupId}`;
+            const result = results[key];
+            const isCompleted = !!result;
+            const score1 = result ? result.score1 : '';
+            const score2 = result ? result.score2 : '';
+            const winner = result ? result.winner : null;
+
+            return `
+                <div class="matchup ${isCompleted ? 'completed' : ''}" data-round="${round}" data-conference="${conference}" data-matchup="${matchupId}">
+                    <div class="team-input">
+                        <span class="team-name" data-team="${team1Abbr}">#${team1Data.seed} ${team1Data.name}${winner === team1Abbr ? '<span class="winner-badge">W</span>' : ''}</span>
+                        <input type="number" class="score1" min="0" placeholder="0" value="${score1}">
+                    </div>
+                    <span class="vs">vs</span>
+                    <div class="team-input">
+                        <span class="team-name" data-team="${team2Abbr}">#${team2Data.seed} ${team2Data.name}${winner === team2Abbr ? '<span class="winner-badge">W</span>' : ''}</span>
+                        <input type="number" class="score2" min="0" placeholder="0" value="${score2}">
+                    </div>
+                    <button class="submit-btn">Save</button>
+                    <span class="status"></span>
+                </div>
+            `;
+        }
+
+        async function handleSubmit() {
+            const matchup = this.closest('.matchup');
+            const round = matchup.dataset.round;
+            const conference = matchup.dataset.conference;
+            const matchupId = parseInt(matchup.dataset.matchup);
+            
+            const team1 = matchup.querySelector('.team-input:first-child .team-name').dataset.team;
+            const team2 = matchup.querySelector('.team-input:last-of-type .team-name').dataset.team;
+            const score1 = parseInt(matchup.querySelector('.score1').value) || 0;
+            const score2 = parseInt(matchup.querySelector('.score2').value) || 0;
+            
+            const adminKey = document.getElementById('adminKey').value;
+            const status = matchup.querySelector('.status');
+            
+            if (!adminKey) {
+                status.textContent = 'Enter admin key!';
+                status.className = 'status error';
+                return;
+            }
+
+            if (score1 === score2) {
+                status.textContent = 'Scores cannot be equal!';
+                status.className = 'status error';
+                return;
+            }
+
+            this.disabled = true;
+            status.textContent = 'Saving...';
+            status.className = 'status';
+
+            try {
+                const response = await fetch('/.netlify/functions/save-result', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        round,
+                        conference,
+                        matchupId,
+                        team1,
+                        team2,
+                        score1,
+                        score2,
+                        adminKey
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    status.textContent = '✓ Saved!';
+                    status.className = 'status success';
+                    matchup.classList.add('completed');
+                    
+                    // Reload to show winner badge
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    status.textContent = data.error || 'Failed';
+                    status.className = 'status error';
+                }
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+                status.className = 'status error';
+            } finally {
+                this.disabled = false;
+            }
+        }
 
         // Load results on page load
         loadResults();

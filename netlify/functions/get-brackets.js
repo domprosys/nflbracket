@@ -23,8 +23,8 @@ export default async (req) => {
     const sanitizedConnectionString = connectionString.replace('channel_binding=require&', '').replace('&channel_binding=require', '').replace('?channel_binding=require', '?');
     const sql = neon(sanitizedConnectionString);
 
-    // Get all predictions with id and creator
-    const predictions = await sql('SELECT id, predictions, creator, created_at FROM predictions ORDER BY created_at');
+    // Get all predictions with id, creator, and pre-computed score
+    const predictions = await sql('SELECT id, predictions, creator, created_at, score FROM predictions ORDER BY created_at');
 
     // Get all results
     let resultsMap = {};
@@ -130,11 +130,14 @@ export default async (req) => {
         alive = false;
       }
 
+      // Use pre-computed score from DB if available, otherwise use calculated
+      const finalScore = row.score !== null && row.score !== undefined ? row.score : score;
+
       return {
         id: row.id,
         creator: row.creator || 'Anonymous',
         predictions: preds,
-        score,
+        score: finalScore,
         alive,
         aliveAfterWildCard
       };
