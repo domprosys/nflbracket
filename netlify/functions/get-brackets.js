@@ -171,8 +171,8 @@ export default async (req) => {
     // Count total matches with results registered
     const totalMatches = Object.keys(resultsMap).length;
     
-    // Filter for leaderboard: show all brackets (sorted by score)
-    const leaderboardBrackets = completeBrackets;
+    // Filter for leaderboard: show brackets with score >= 5
+    const leaderboardBrackets = completeBrackets.filter(b => b.score >= 5);
     
     // For backwards compatibility
     const qualifiedBrackets = leaderboardBrackets;
