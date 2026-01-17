@@ -1,13 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-// Points per round
-const POINTS = {
-  wildcard: 1,
-  divisional: 2,
-  conference: 4,
-  sb: 8,
-  champion: 16
-};
+// 1 point per correct prediction, regardless of round
 
 export default async (req) => {
   // Only allow POST
@@ -129,28 +122,28 @@ async function recalculateAllScores(sql) {
         const winnerInDivisional = preds.some(p => 
           p.round === 'divisional' && p.team === result.winner
         );
-        if (winnerInDivisional) score += POINTS.wildcard;
+        if (winnerInDivisional) score += 1;
       }
 
       if (round === 'divisional') {
         const winnerInConference = preds.some(p => 
           p.round === 'conference' && p.team === result.winner
         );
-        if (winnerInConference) score += POINTS.divisional;
+        if (winnerInConference) score += 1;
       }
 
       if (round === 'conference') {
         const winnerInSB = preds.some(p => 
           p.round === 'sb' && p.team === result.winner
         );
-        if (winnerInSB) score += POINTS.conference;
+        if (winnerInSB) score += 1;
       }
 
       if (round === 'sb') {
         const winnerIsChampion = preds.some(p => 
           p.round === 'champion' && p.team === result.winner
         );
-        if (winnerIsChampion) score += POINTS.sb + POINTS.champion;
+        if (winnerIsChampion) score += 1;
       }
     }
 

@@ -1,13 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-// Points per round
-const POINTS = {
-  wildcard: 1,    // For picking WC winner (shown in divisional)
-  divisional: 2,  // For picking divisional winner (shown in conference)
-  conference: 4,  // For picking conference winner (shown in sb)
-  sb: 8,          // For picking SB winner (shown in champion)
-  champion: 16    // For picking correct champion
-};
+// 1 point per correct prediction, regardless of round
 
 export default async (req) => {
   try {
@@ -78,7 +71,7 @@ export default async (req) => {
       let alive = true;
       let aliveAfterWildCard = true;
 
-      // Check Wild Card results (winner should be in divisional predictions)
+      // Check results - 1 point per correct prediction
       for (const key in resultsMap) {
         const result = resultsMap[key];
         const [round, conference, matchupIdStr] = key.split('-');
@@ -89,7 +82,7 @@ export default async (req) => {
           );
           
           if (winnerInDivisional) {
-            score += POINTS.wildcard;
+            score += 1;
           } else {
             alive = false;
             aliveAfterWildCard = false;
@@ -102,7 +95,7 @@ export default async (req) => {
           );
           
           if (winnerInConference) {
-            score += POINTS.divisional;
+            score += 1;
           } else {
             alive = false;
           }
@@ -114,7 +107,7 @@ export default async (req) => {
           );
           
           if (winnerInSB) {
-            score += POINTS.conference;
+            score += 1;
           } else {
             alive = false;
           }
@@ -126,7 +119,7 @@ export default async (req) => {
           );
           
           if (winnerIsChampion) {
-            score += POINTS.sb + POINTS.champion;
+            score += 1;
           } else {
             alive = false;
           }
@@ -175,11 +168,11 @@ export default async (req) => {
       return b.score - a.score;
     });
     
-    // Filter for leaderboard: brackets with more than 5 points
-    const leaderboardBrackets = completeBrackets.filter(b => b.score > 5);
+    // Count total matches with results registered
+    const totalMatches = Object.keys(resultsMap).length;
     
-    // Count brackets with exactly 4 points (for the "X more with 4 points" message)
-    const fourPointBrackets = completeBrackets.filter(b => b.score === 4).length;
+    // Filter for leaderboard: show all brackets (sorted by score)
+    const leaderboardBrackets = completeBrackets;
     
     // For backwards compatibility
     const qualifiedBrackets = leaderboardBrackets;
@@ -189,8 +182,8 @@ export default async (req) => {
     return new Response(JSON.stringify({ 
       brackets: qualifiedBrackets,
       totalQualified: qualifiedBrackets.length,
+      totalMatches,
       aliveBrackets,
-      fourPointBrackets,
       results: resultsMap
     }), {
       headers: { 

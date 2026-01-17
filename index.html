@@ -377,13 +377,14 @@
             font-size: 1.1em;
         }
 
-        .leaderboard-more {
+        .leaderboard-header-info {
             text-align: center;
             color: #666;
-            font-style: italic;
-            padding: 15px;
-            margin-top: 10px;
-            border-top: 1px solid #ddd;
+            font-size: 0.9em;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
         }
 
         .bracket-rank {
@@ -1676,7 +1677,7 @@
         let leaderboardBrackets = [];
         let currentBracketIndex = 0;
         let currentResults = {};
-        let fourPointCount = 0;
+        let totalMatchesCount = 0;
         let isViewerMode = false;
         let isLeaderboardMode = false;
 
@@ -1693,11 +1694,11 @@
 
                 allBrackets = data.brackets || [];
                 currentResults = data.results || {};
-                fourPointCount = data.fourPointBrackets || 0;
+                totalMatchesCount = data.totalMatches || 0;
                 
                 console.log('Loaded brackets:', allBrackets.length);
                 
-                // All brackets with >5 points are shown (no slice needed)
+                // All brackets are shown (sorted by score)
                 leaderboardBrackets = allBrackets;
                 isLeaderboardMode = true;
 
@@ -1719,6 +1720,14 @@
             const listEl = document.getElementById('leaderboard-list');
             listEl.innerHTML = '';
 
+            // Add explanation header
+            if (totalMatchesCount > 0) {
+                const header = document.createElement('div');
+                header.className = 'leaderboard-header-info';
+                header.textContent = `Scoring: 1 point per correct prediction (${totalMatchesCount} matches played)`;
+                listEl.appendChild(header);
+            }
+
             leaderboardBrackets.forEach((bracket, index) => {
                 const rank = index + 1;
                 const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
@@ -1729,18 +1738,10 @@
                 item.innerHTML = `
                     <span class="leaderboard-rank ${rankClass}">#${rank}</span>
                     <span class="leaderboard-creator">${bracket.creator}</span>
-                    <span class="leaderboard-score">${bracket.score} pts</span>
+                    <span class="leaderboard-score">${bracket.score}/${totalMatchesCount}</span>
                 `;
                 listEl.appendChild(item);
             });
-
-            // Add message about 4-point brackets if any
-            if (fourPointCount > 0) {
-                const moreMsg = document.createElement('div');
-                moreMsg.className = 'leaderboard-more';
-                moreMsg.textContent = `+ ${fourPointCount} more bracket${fourPointCount > 1 ? 's' : ''} with 4 points`;
-                listEl.appendChild(moreMsg);
-            }
         }
 
         function closeLeaderboard() {
@@ -1813,7 +1814,7 @@
             // Update header info
             document.getElementById('bracket-creator-name').textContent = 'Bracket by: ' + bracket.creator;
             document.getElementById('bracket-position').textContent = rank + ' / ' + leaderboardBrackets.length;
-            document.getElementById('bracket-score').textContent = 'Score: ' + bracket.score + ' pts';
+            document.getElementById('bracket-score').textContent = 'Score: ' + bracket.score + '/' + totalMatchesCount;
 
             // Show/hide navigation arrows based on position
             document.getElementById('prev-btn').style.visibility = index === 0 ? 'hidden' : 'visible';
