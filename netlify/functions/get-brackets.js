@@ -159,14 +159,24 @@ export default async (req) => {
       };
     });
 
-    // Filter to only brackets that were alive after Wild Card
-    const qualifiedBrackets = brackets.filter(b => b.aliveAfterWildCard);
+    // Filter to only complete brackets (have all required predictions)
+    const completeBrackets = brackets.filter(b => {
+      const preds = b.predictions;
+      if (!Array.isArray(preds)) return false;
+      const hasDivisional = preds.filter(p => p.round === 'divisional').length >= 6;
+      const hasConference = preds.filter(p => p.round === 'conference').length >= 4;
+      const hasSB = preds.filter(p => p.round === 'sb').length >= 2;
+      const hasChampion = preds.filter(p => p.round === 'champion').length >= 1;
+      return hasDivisional && hasConference && hasSB && hasChampion;
+    });
     
     // Sort by score (descending), then by alive status
-    qualifiedBrackets.sort((a, b) => {
-      if (a.alive !== b.alive) return b.alive - a.alive; // Alive first
-      return b.score - a.score; // Then by score
+    completeBrackets.sort((a, b) => {
+      return b.score - a.score; // Sort by score only
     });
+    
+    // For backwards compatibility, also track qualified brackets
+    const qualifiedBrackets = completeBrackets;
 
     const aliveBrackets = qualifiedBrackets.filter(b => b.alive).length;
 
