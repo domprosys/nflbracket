@@ -377,6 +377,15 @@
             font-size: 1.1em;
         }
 
+        .leaderboard-more {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 15px;
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
         .bracket-rank {
             font-size: 3em;
             font-weight: bold;
@@ -880,7 +889,7 @@
         </div>
 
         <div id="leaderboard-header" class="stats-header" style="display: none;">
-            <h2>🏆 Leaderboard - Top 10</h2>
+            <h2>🏆 Leaderboard</h2>
             <div id="leaderboard-list" class="leaderboard-list"></div>
             <div class="alive-box back-btn" onclick="closeLeaderboard()" style="cursor: pointer;">
                 ← Back to Stats
@@ -1664,9 +1673,10 @@
 
         // Bracket viewer state
         let allBrackets = [];
-        let leaderboardBrackets = []; // Top 10 for navigation
+        let leaderboardBrackets = [];
         let currentBracketIndex = 0;
         let currentResults = {};
+        let fourPointCount = 0;
         let isViewerMode = false;
         let isLeaderboardMode = false;
 
@@ -1683,11 +1693,12 @@
 
                 allBrackets = data.brackets || [];
                 currentResults = data.results || {};
+                fourPointCount = data.fourPointBrackets || 0;
                 
                 console.log('Loaded brackets:', allBrackets.length);
                 
-                // Get top 10 for leaderboard
-                leaderboardBrackets = allBrackets.slice(0, 10);
+                // All brackets with >5 points are shown (no slice needed)
+                leaderboardBrackets = allBrackets;
                 isLeaderboardMode = true;
 
                 // Switch headers
@@ -1722,6 +1733,14 @@
                 `;
                 listEl.appendChild(item);
             });
+
+            // Add message about 4-point brackets if any
+            if (fourPointCount > 0) {
+                const moreMsg = document.createElement('div');
+                moreMsg.className = 'leaderboard-more';
+                moreMsg.textContent = `+ ${fourPointCount} more bracket${fourPointCount > 1 ? 's' : ''} with 4 points`;
+                listEl.appendChild(moreMsg);
+            }
         }
 
         function closeLeaderboard() {

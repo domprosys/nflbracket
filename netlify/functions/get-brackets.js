@@ -170,20 +170,27 @@ export default async (req) => {
       return hasDivisional && hasConference && hasSB && hasChampion;
     });
     
-    // Sort by score (descending), then by alive status
+    // Sort by score (descending)
     completeBrackets.sort((a, b) => {
-      return b.score - a.score; // Sort by score only
+      return b.score - a.score;
     });
     
-    // For backwards compatibility, also track qualified brackets
-    const qualifiedBrackets = completeBrackets;
+    // Filter for leaderboard: brackets with more than 5 points
+    const leaderboardBrackets = completeBrackets.filter(b => b.score > 5);
+    
+    // Count brackets with exactly 4 points (for the "X more with 4 points" message)
+    const fourPointBrackets = completeBrackets.filter(b => b.score === 4).length;
+    
+    // For backwards compatibility
+    const qualifiedBrackets = leaderboardBrackets;
 
-    const aliveBrackets = qualifiedBrackets.filter(b => b.alive).length;
+    const aliveBrackets = completeBrackets.filter(b => b.alive).length;
 
     return new Response(JSON.stringify({ 
       brackets: qualifiedBrackets,
       totalQualified: qualifiedBrackets.length,
       aliveBrackets,
+      fourPointBrackets,
       results: resultsMap
     }), {
       headers: { 
