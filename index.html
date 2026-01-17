@@ -1681,8 +1681,10 @@
                     return;
                 }
 
-                allBrackets = data.brackets;
-                currentResults = data.results;
+                allBrackets = data.brackets || [];
+                currentResults = data.results || {};
+                
+                console.log('Loaded brackets:', allBrackets.length);
                 
                 // Get top 10 for leaderboard
                 leaderboardBrackets = allBrackets.slice(0, 10);
@@ -1691,6 +1693,9 @@
                 // Switch headers
                 document.getElementById('stats-header').style.display = 'none';
                 document.getElementById('leaderboard-header').style.display = 'block';
+                
+                // Hide the bracket grid when showing leaderboard list
+                document.querySelector('.bracket-grid').style.display = 'none';
 
                 // Render leaderboard list
                 renderLeaderboard();
@@ -1725,6 +1730,9 @@
             // Switch headers back
             document.getElementById('leaderboard-header').style.display = 'none';
             document.getElementById('stats-header').style.display = 'block';
+            
+            // Show the bracket grid again
+            document.querySelector('.bracket-grid').style.display = '';
 
             // Re-enable stats mode display
             enableStatsMode();
@@ -1738,6 +1746,9 @@
             // Switch headers
             document.getElementById('leaderboard-header').style.display = 'none';
             document.getElementById('bracket-viewer-header').style.display = 'block';
+            
+            // Show the bracket grid for individual bracket view
+            document.querySelector('.bracket-grid').style.display = '';
 
             // Display bracket
             displayBracket(currentBracketIndex);
@@ -1749,6 +1760,9 @@
             // Switch headers back
             document.getElementById('bracket-viewer-header').style.display = 'none';
             document.getElementById('leaderboard-header').style.display = 'block';
+            
+            // Hide the bracket grid when showing leaderboard list
+            document.querySelector('.bracket-grid').style.display = 'none';
         }
 
         function prevBracket() {
