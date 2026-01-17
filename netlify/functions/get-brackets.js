@@ -148,7 +148,8 @@ export default async (req) => {
         predictions: preds,
         score: finalScore,
         alive,
-        aliveAfterWildCard
+        aliveAfterWildCard,
+        created_at: row.created_at
       };
     });
 
@@ -163,9 +164,10 @@ export default async (req) => {
       return hasDivisional && hasConference && hasSB && hasChampion;
     });
     
-    // Sort by score (descending)
+    // Sort by score (descending), then by created_at (ascending - earlier first)
     completeBrackets.sort((a, b) => {
-      return b.score - a.score;
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(a.created_at) - new Date(b.created_at);
     });
     
     // Count total matches with results registered
