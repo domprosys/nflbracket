@@ -2047,37 +2047,10 @@
             // wcStats structure: { "AFC-0": { "NE": 60, "LAC": 40, total: X }, ... }
             // Matchup 0 = #2 vs #7, Matchup 1 = #3 vs #6, Matchup 2 = #4 vs #5
 
-            // Track winners to advance to divisional
+            // Track winners to advance to divisional (actual results take priority)
             const wcWinners = { AFC: [], NFC: [] };
 
             ['AFC', 'NFC'].forEach(conference => {
-                // For each matchup, find the winner (highest percentage)
-                for (let matchupId = 0; matchupId < 3; matchupId++) {
-                    const statsKey = `${conference}-${matchupId}`;
-                    const matchupStats = wcStats[statsKey];
-                    
-                    if (matchupStats) {
-                        let maxPct = 0;
-                        let winner = null;
-                        
-                        for (const team in matchupStats) {
-                            if (team === 'total') continue;
-                            if (matchupStats[team] > maxPct) {
-                                maxPct = matchupStats[team];
-                                winner = team;
-                            }
-                        }
-                        
-                        if (winner) {
-                            // Find the team data for this winner
-                            const winnerData = teams[conference].find(t => t.abbr === winner);
-                            if (winnerData) {
-                                wcWinners[conference].push(winnerData);
-                            }
-                        }
-                    }
-                }
-
                 // Get all Wild Card teams (not the bye team)
                 const wcTeams = document.querySelectorAll(
                     `[data-conference="${conference}"][data-round="wildcard"]`
@@ -2119,11 +2092,26 @@
                     if (result) {
                         applyResultStyling(team1.teamDiv, team1.teamData.abbr, result);
                         applyResultStyling(team2.teamDiv, team2.teamData.abbr, result);
+                        
+                        // Use actual winner for advancement
+                        const winnerData = result.winner === team1.teamData.abbr ? team1.teamData : team2.teamData;
+                        wcWinners[conference].push(winnerData);
+                    } else {
+                        // No result yet, use prediction-based winner
+                        if (pct1 > pct2) {
+                            wcWinners[conference].push(team1.teamData);
+                        } else if (pct2 > pct1) {
+                            wcWinners[conference].push(team2.teamData);
+                        }
                     }
                 });
 
-                // Advance winners to divisional round
-                advanceWcWinnersToDivisional(conference, wcWinners[conference]);
+                // Advance winners to divisional round (with isActualResult flag)
+                const hasAllResults = Object.keys(matchupTeams).every(matchupId => {
+                    const resultKey = `wildcard-${conference}-${matchupId}`;
+                    return results?.[resultKey];
+                });
+                advanceWcWinnersToDivisional(conference, wcWinners[conference], hasAllResults);
             });
         }
 
@@ -2142,7 +2130,7 @@
             }
         }
 
-        function advanceWcWinnersToDivisional(conference, winners) {
+        function advanceWcWinnersToDivisional(conference, winners, isActualResult = false) {
             if (winners.length < 3) return;
 
             // Sort winners by seed (ascending - lowest seed number is best)
@@ -2157,10 +2145,11 @@
             const bestRemaining = winners[0];
             const middleRemaining = winners[1];
 
-            // Update divisional slots
-            updateSlotWithStats(lowestSeed, conference, 'divisional', 1);
-            updateSlotWithStats(bestRemaining, conference, 'divisional', 2);
-            updateSlotWithStats(middleRemaining, conference, 'divisional', 3);
+            // Update divisional slots - if actual result, don't style as predicted (grey)
+            const isPredicted = !isActualResult;
+            updateSlotWithStats(lowestSeed, conference, 'divisional', 1, isPredicted);
+            updateSlotWithStats(bestRemaining, conference, 'divisional', 2, isPredicted);
+            updateSlotWithStats(middleRemaining, conference, 'divisional', 3, isPredicted);
         }
 
         function updateSlotWithStats(team, conference, round, slot, isPredicted = true) {

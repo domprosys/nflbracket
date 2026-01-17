@@ -24,7 +24,13 @@ export default async (req) => {
     const sql = neon(sanitizedConnectionString);
 
     // Get all predictions with id, creator, and pre-computed score
-    const predictions = await sql('SELECT id, predictions, creator, created_at, score FROM predictions ORDER BY created_at');
+    let predictions;
+    try {
+      predictions = await sql`SELECT id, predictions, creator, created_at, score FROM predictions ORDER BY created_at`;
+    } catch (e) {
+      // score column might not exist yet, try without it
+      predictions = await sql`SELECT id, predictions, creator, created_at FROM predictions ORDER BY created_at`;
+    }
 
     // Get all results
     let resultsMap = {};
