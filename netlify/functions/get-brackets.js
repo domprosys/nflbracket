@@ -23,13 +23,23 @@ export default async (req) => {
     const sanitizedConnectionString = connectionString.replace('channel_binding=require&', '').replace('&channel_binding=require', '').replace('?channel_binding=require', '?');
     const sql = neon(sanitizedConnectionString);
 
-    // Get all predictions with id, creator, and pre-computed score
-    let predictions;
+    // Get all predictions - first try with score column, fallback to without
+    let predictions = [];
+    let hasScoreColumn = true;
     try {
-      predictions = await sql`SELECT id, predictions, creator, created_at, score FROM predictions ORDER BY created_at`;
+      const result = await sql`SELECT id, predictions, creator, created_at, score FROM predictions ORDER BY created_at`;
+      predictions = result;
     } catch (e) {
       // score column might not exist yet, try without it
-      predictions = await sql`SELECT id, predictions, creator, created_at FROM predictions ORDER BY created_at`;
+      console.log('Score column not found, querying without it');
+      hasScoreColumn = false;
+      try {
+        const result = await sql`SELECT id, predictions, creator, created_at FROM predictions ORDER BY created_at`;
+        predictions = result;
+      } catch (e2) {
+        console.error('Failed to query predictions:', e2.message);
+        predictions = [];
+      }
     }
 
     // Get all results
