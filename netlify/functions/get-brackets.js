@@ -71,59 +71,83 @@ export default async (req) => {
       let alive = true;
       let aliveAfterWildCard = true;
 
-      // Check results - 1 point per correct prediction
+      // New scoring: count teams correctly predicted to reach each round
+      // Collect actual teams that reached each round from results
+      const actualDivisional = new Set(); // WC winners (exclude #1 seeds)
+      const actualConference = new Set(); // Divisional winners
+      const actualSB = new Set(); // Conference winners
+      let actualChampion = null; // SB winner
+
       for (const key in resultsMap) {
         const result = resultsMap[key];
-        const [round, conference, matchupIdStr] = key.split('-');
+        const [round] = key.split('-');
 
         if (round === 'wildcard') {
-          const winnerInDivisional = preds.some(p => 
-            p.round === 'divisional' && p.team === result.winner
-          );
-          
-          if (winnerInDivisional) {
-            score += 1;
-          } else {
-            alive = false;
-            aliveAfterWildCard = false;
-          }
+          actualDivisional.add(result.winner); // WC winner advances to divisional
         }
-
         if (round === 'divisional') {
-          const winnerInConference = preds.some(p => 
-            p.round === 'conference' && p.team === result.winner
-          );
-          
-          if (winnerInConference) {
-            score += 1;
-          } else {
-            alive = false;
-          }
+          actualConference.add(result.winner); // Divisional winner advances to conference
         }
-
         if (round === 'conference') {
-          const winnerInSB = preds.some(p => 
-            p.round === 'sb' && p.team === result.winner
-          );
-          
-          if (winnerInSB) {
-            score += 1;
-          } else {
-            alive = false;
-          }
+          actualSB.add(result.winner); // Conference winner advances to SB
         }
-
         if (round === 'sb') {
-          const winnerIsChampion = preds.some(p => 
-            p.round === 'champion' && p.team === result.winner
-          );
-          
-          if (winnerIsChampion) {
-            score += 1;
-          } else {
-            alive = false;
-          }
+          actualChampion = result.winner; // SB winner is champion
         }
+      }
+
+      // Get user's predicted teams at each round
+      const predictedDivisional = preds.filter(p => p.round === 'divisional').map(p => p.team);
+      const predictedConference = preds.filter(p => p.round === 'conference').map(p => p.team);
+      const predictedSB = preds.filter(p => p.round === 'sb').map(p => p.team);
+      const predictedChampion = preds.find(p => p.round === 'champion')?.team;
+
+      // Score: 1 point for each team correctly predicted to reach that round
+      // Divisional: only count WC winners (not #1 seeds who had bye)
+      for (const team of actualDivisional) {
+        if (predictedDivisional.includes(team)) {
+          score += 1;
+        }
+      }
+
+      // Conference: count divisional winners user predicted to be in conference
+      for (const team of actualConference) {
+        if (predictedConference.includes(team)) {
+          score += 1;
+        }
+      }
+
+      // Super Bowl: count conference winners user predicted to be in SB
+      for (const team of actualSB) {
+        if (predictedSB.includes(team)) {
+          score += 1;
+        }
+      }
+
+      // Champion: 1 point if predicted correctly
+      if (actualChampion && predictedChampion === actualChampion) {
+        score += 1;
+      }
+
+      // Alive status: check if all predictions match actual results
+      for (const team of actualDivisional) {
+        if (!predictedDivisional.includes(team)) {
+          alive = false;
+          aliveAfterWildCard = false;
+        }
+      }
+      for (const team of actualConference) {
+        if (!predictedConference.includes(team)) {
+          alive = false;
+        }
+      }
+      for (const team of actualSB) {
+        if (!predictedSB.includes(team)) {
+          alive = false;
+        }
+      }
+      if (actualChampion && predictedChampion !== actualChampion) {
+        alive = false;
       }
 
       // Check if bracket has all required predictions (complete bracket)
@@ -170,8 +194,19 @@ export default async (req) => {
       return new Date(a.created_at) - new Date(b.created_at);
     });
     
-    // Count total matches with results registered
-    const totalMatches = Object.keys(resultsMap).length;
+    // Calculate max possible points based on teams that advanced
+    // Divisional: 6 WC winners (exclude #1 seeds), Conference: 4, SB: 2, Champion: 1
+    let maxPoints = 0;
+    let wcCount = 0, divCount = 0, confCount = 0, sbCount = 0;
+    for (const key in resultsMap) {
+      const [round] = key.split('-');
+      if (round === 'wildcard') wcCount++;
+      if (round === 'divisional') divCount++;
+      if (round === 'conference') confCount++;
+      if (round === 'sb') sbCount++;
+    }
+    maxPoints = wcCount + divCount + confCount + sbCount; // Each result = 1 team advancing = 1 possible point
+    const totalMatches = maxPoints;
     
     // Filter for leaderboard: show brackets with score >= 5
     const leaderboardBrackets = completeBrackets.filter(b => b.score >= 5);

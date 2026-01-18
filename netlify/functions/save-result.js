@@ -104,6 +104,30 @@ async function recalculateAllScores(sql) {
     resultsMap[key] = r;
   });
 
+  // Collect actual teams that reached each round from results
+  const actualDivisional = new Set(); // WC winners (exclude #1 seeds)
+  const actualConference = new Set(); // Divisional winners
+  const actualSB = new Set(); // Conference winners
+  let actualChampion = null; // SB winner
+
+  for (const key in resultsMap) {
+    const result = resultsMap[key];
+    const [round] = key.split('-');
+
+    if (round === 'wildcard') {
+      actualDivisional.add(result.winner);
+    }
+    if (round === 'divisional') {
+      actualConference.add(result.winner);
+    }
+    if (round === 'conference') {
+      actualSB.add(result.winner);
+    }
+    if (round === 'sb') {
+      actualChampion = result.winner;
+    }
+  }
+
   // Get all predictions
   const predictions = await sql`SELECT id, predictions FROM predictions`;
 
@@ -114,37 +138,24 @@ async function recalculateAllScores(sql) {
 
     let score = 0;
 
-    for (const key in resultsMap) {
-      const result = resultsMap[key];
-      const [round] = key.split('-');
+    // Get user's predicted teams at each round
+    const predictedDivisional = preds.filter(p => p.round === 'divisional').map(p => p.team);
+    const predictedConference = preds.filter(p => p.round === 'conference').map(p => p.team);
+    const predictedSB = preds.filter(p => p.round === 'sb').map(p => p.team);
+    const predictedChampion = preds.find(p => p.round === 'champion')?.team;
 
-      if (round === 'wildcard') {
-        const winnerInDivisional = preds.some(p => 
-          p.round === 'divisional' && p.team === result.winner
-        );
-        if (winnerInDivisional) score += 1;
-      }
-
-      if (round === 'divisional') {
-        const winnerInConference = preds.some(p => 
-          p.round === 'conference' && p.team === result.winner
-        );
-        if (winnerInConference) score += 1;
-      }
-
-      if (round === 'conference') {
-        const winnerInSB = preds.some(p => 
-          p.round === 'sb' && p.team === result.winner
-        );
-        if (winnerInSB) score += 1;
-      }
-
-      if (round === 'sb') {
-        const winnerIsChampion = preds.some(p => 
-          p.round === 'champion' && p.team === result.winner
-        );
-        if (winnerIsChampion) score += 1;
-      }
+    // Score: 1 point for each team correctly predicted to reach that round
+    for (const team of actualDivisional) {
+      if (predictedDivisional.includes(team)) score += 1;
+    }
+    for (const team of actualConference) {
+      if (predictedConference.includes(team)) score += 1;
+    }
+    for (const team of actualSB) {
+      if (predictedSB.includes(team)) score += 1;
+    }
+    if (actualChampion && predictedChampion === actualChampion) {
+      score += 1;
     }
 
     // Update score in database
