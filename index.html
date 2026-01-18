@@ -2253,23 +2253,23 @@
                     if (result) {
                         applyResultStyling(team1Div, team1Data.abbr, result);
                         applyResultStyling(team2Div, team2Data.abbr, result);
-                        // Advance actual winner to conference
+                        // Advance actual winner to conference (not predicted - normal font)
                         const winnerData = result.winner === team1Data.abbr ? team1Data : team2Data;
-                        advanceToConference(winnerData, conference, matchupIdx);
+                        advanceToConference(winnerData, conference, matchupIdx, false);
                     } else {
                         // Advance predicted winner to conference round (based on raw count)
                         if (count1 > count2) {
-                            advanceToConference(team1Data, conference, matchupIdx);
+                            advanceToConference(team1Data, conference, matchupIdx, true);
                         } else if (count2 > count1) {
-                            advanceToConference(team2Data, conference, matchupIdx);
+                            advanceToConference(team2Data, conference, matchupIdx, true);
                         }
                     }
                 });
             });
         }
 
-        function advanceToConference(team, conference, slot) {
-            updateSlotWithStats(team, conference, 'conference', slot, true);
+        function advanceToConference(team, conference, slot, isPredicted = true) {
+            updateSlotWithStats(team, conference, 'conference', slot, isPredicted);
         }
 
         function displayConferenceStats(roundCounts, totalBrackets, results) {
@@ -2309,27 +2309,27 @@
                 if (result) {
                     applyResultStyling(team1Div, team1Data.abbr, result);
                     applyResultStyling(team2Div, team2Data.abbr, result);
-                    // Advance actual winner to Super Bowl
+                    // Advance actual winner to Super Bowl (not predicted - normal font)
                     const winnerData = result.winner === team1Data.abbr ? team1Data : team2Data;
-                    advanceToSuperBowl(winnerData, conference);
+                    advanceToSuperBowl(winnerData, conference, false);
                 } else {
                     // Advance predicted winner to Super Bowl (based on raw count)
                     if (count1 > count2) {
-                        advanceToSuperBowl(team1Data, conference);
+                        advanceToSuperBowl(team1Data, conference, true);
                     } else if (count2 > count1) {
-                        advanceToSuperBowl(team2Data, conference);
+                        advanceToSuperBowl(team2Data, conference, true);
                     }
                 }
             });
         }
 
-        function advanceToSuperBowl(team, conference) {
+        function advanceToSuperBowl(team, conference, isPredicted = true) {
             const sbSlot = conference === 'AFC' ? 0 : 1;
             const sbTeam = document.querySelector(`[data-round="sb"][data-slot="${sbSlot}"]`);
 
             if (!sbTeam) return;
 
-            sbTeam.className = 'team predicted';
+            sbTeam.className = isPredicted ? 'team predicted' : 'team';
             sbTeam.dataset.teamData = JSON.stringify(team);
             sbTeam.dataset.conference = conference.toLowerCase();
             sbTeam.innerHTML = `
