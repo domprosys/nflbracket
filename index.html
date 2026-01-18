@@ -132,36 +132,35 @@
             color: #dc3545;
         }
 
-        .team.prediction-correct {
+        /* Individual bracket viewer: user's winner pick (green cell) */
+        .team.pick-winner {
             background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             border: 2px solid #28a745;
         }
 
-        .team.prediction-wrong {
-            opacity: 0.6;
+        /* Individual bracket viewer: user's loser pick (red cell, no cross-out) */
+        .team.pick-loser {
             background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
             border: 2px solid #dc3545;
         }
 
+        /* Cross-out only when prediction was wrong based on actual results */
         .team.prediction-wrong .team-name {
             text-decoration: line-through;
-            color: #dc3545;
         }
 
-        .champion-team.prediction-correct {
+        .champion-team.pick-winner {
             border: 3px solid #28a745;
             background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
         }
 
-        .champion-team.prediction-wrong {
-            opacity: 0.6;
+        .champion-team.pick-loser {
             border: 3px solid #dc3545;
             background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
         }
 
         .champion-team.prediction-wrong .team-name {
             text-decoration: line-through;
-            color: #dc3545;
         }
 
         .team-score {
@@ -1897,119 +1896,196 @@
         }
 
         function applyResultsToBracket(predictions) {
-            // Apply winner/loser styling based on results for all rounds
+            // Step 1: Mark all user picks with green (winner) / red (loser) styling
+            // For each round, find pairs of teams and mark which one user picked to advance
+            
+            // Wild Card round - mark winner/loser picks based on who advances to divisional
+            const wcMatchups = {
+                'AFC': [[4, 5], [3, 6], [2, 7]], // seed matchups
+                'NFC': [[4, 5], [3, 6], [2, 7]]
+            };
+            
+            ['AFC', 'NFC'].forEach(conference => {
+                wcMatchups[conference].forEach((seeds, matchupIdx) => {
+                    const team1Div = document.querySelector(
+                        `[data-conference="${conference}"][data-round="wildcard"][data-slot="${matchupIdx * 2}"]`
+                    );
+                    const team2Div = document.querySelector(
+                        `[data-conference="${conference}"][data-round="wildcard"][data-slot="${matchupIdx * 2 + 1}"]`
+                    );
+                    
+                    if (!team1Div?.dataset.teamData || !team2Div?.dataset.teamData) return;
+                    
+                    const team1Data = JSON.parse(team1Div.dataset.teamData);
+                    const team2Data = JSON.parse(team2Div.dataset.teamData);
+                    
+                    // Find which team user picked to advance (in divisional round)
+                    const userPick = predictions.find(p => 
+                        p.round === 'divisional' && 
+                        p.conference === conference &&
+                        (p.team === team1Data.abbr || p.team === team2Data.abbr)
+                    );
+                    
+                    if (userPick) {
+                        if (userPick.team === team1Data.abbr) {
+                            team1Div.classList.add('pick-winner');
+                            team2Div.classList.add('pick-loser');
+                        } else {
+                            team2Div.classList.add('pick-winner');
+                            team1Div.classList.add('pick-loser');
+                        }
+                    }
+                });
+            });
+            
+            // Divisional round - mark winner/loser picks based on who advances to conference
+            ['AFC', 'NFC'].forEach(conference => {
+                // Matchup 0: slots 0 vs 1, Matchup 1: slots 2 vs 3
+                [[0, 1], [2, 3]].forEach((slots, matchupIdx) => {
+                    const team1Div = document.querySelector(
+                        `[data-conference="${conference}"][data-round="divisional"][data-slot="${slots[0]}"]`
+                    );
+                    const team2Div = document.querySelector(
+                        `[data-conference="${conference}"][data-round="divisional"][data-slot="${slots[1]}"]`
+                    );
+                    
+                    if (!team1Div?.dataset.teamData || !team2Div?.dataset.teamData) return;
+                    
+                    const team1Data = JSON.parse(team1Div.dataset.teamData);
+                    const team2Data = JSON.parse(team2Div.dataset.teamData);
+                    
+                    // Find which team user picked to advance (in conference round)
+                    const userPick = predictions.find(p => 
+                        p.round === 'conference' && 
+                        p.conference === conference &&
+                        p.slot === matchupIdx &&
+                        (p.team === team1Data.abbr || p.team === team2Data.abbr)
+                    );
+                    
+                    if (userPick) {
+                        if (userPick.team === team1Data.abbr) {
+                            team1Div.classList.add('pick-winner');
+                            team2Div.classList.add('pick-loser');
+                        } else {
+                            team2Div.classList.add('pick-winner');
+                            team1Div.classList.add('pick-loser');
+                        }
+                    }
+                });
+            });
+            
+            // Conference round - mark winner/loser picks based on who advances to SB
+            ['AFC', 'NFC'].forEach(conference => {
+                const team1Div = document.querySelector(
+                    `[data-conference="${conference}"][data-round="conference"][data-slot="0"]`
+                );
+                const team2Div = document.querySelector(
+                    `[data-conference="${conference}"][data-round="conference"][data-slot="1"]`
+                );
+                
+                if (!team1Div?.dataset.teamData || !team2Div?.dataset.teamData) return;
+                
+                const team1Data = JSON.parse(team1Div.dataset.teamData);
+                const team2Data = JSON.parse(team2Div.dataset.teamData);
+                
+                // Find which team user picked to advance (in SB)
+                const userPick = predictions.find(p => 
+                    p.round === 'sb' && 
+                    p.conference === conference
+                );
+                
+                if (userPick) {
+                    if (userPick.team === team1Data.abbr) {
+                        team1Div.classList.add('pick-winner');
+                        team2Div.classList.add('pick-loser');
+                    } else if (userPick.team === team2Data.abbr) {
+                        team2Div.classList.add('pick-winner');
+                        team1Div.classList.add('pick-loser');
+                    }
+                }
+            });
+            
+            // Super Bowl - mark winner/loser picks based on champion
+            const afcSbDiv = document.querySelector('[data-round="sb"][data-slot="0"]');
+            const nfcSbDiv = document.querySelector('[data-round="sb"][data-slot="1"]');
+            
+            if (afcSbDiv?.dataset.teamData && nfcSbDiv?.dataset.teamData) {
+                const afcData = JSON.parse(afcSbDiv.dataset.teamData);
+                const nfcData = JSON.parse(nfcSbDiv.dataset.teamData);
+                
+                const championPick = predictions.find(p => p.round === 'champion');
+                if (championPick) {
+                    if (championPick.team === afcData.abbr) {
+                        afcSbDiv.classList.add('pick-winner');
+                        nfcSbDiv.classList.add('pick-loser');
+                    } else if (championPick.team === nfcData.abbr) {
+                        nfcSbDiv.classList.add('pick-winner');
+                        afcSbDiv.classList.add('pick-loser');
+                    }
+                }
+            }
+            
+            // Step 2: Check actual results and add cross-out for wrong predictions
             for (const key in currentResults) {
                 const result = currentResults[key];
                 const [round, conference, matchupId] = key.split('-');
                 
                 if (round === 'wildcard') {
-                    // Find the Wild Card teams for this matchup
-                    const wcTeams = document.querySelectorAll(
-                        `[data-conference="${conference}"][data-round="wildcard"]`
-                    );
-                    
-                    wcTeams.forEach(teamDiv => {
-                        if (!teamDiv.dataset.teamData) return;
-                        const teamData = JSON.parse(teamDiv.dataset.teamData);
-                        const teamMatchupId = getWcMatchupId(teamData.seed);
-                        
-                        if (teamMatchupId === parseInt(matchupId)) {
-                            // Add score
-                            const score = document.createElement('div');
-                            score.className = 'team-score';
-                            score.textContent = teamData.abbr === result.team1 ? result.score1 : result.score2;
-                            teamDiv.appendChild(score);
-
-                            // Add winner/loser class
-                            if (teamData.abbr === result.winner) {
-                                teamDiv.classList.add('result-winner');
-                            } else {
-                                teamDiv.classList.add('result-loser');
-                            }
-                        }
-                    });
-
-                    // Check if user predicted the WC winner correctly (winner should be in divisional)
-                    const predictedWinner = predictions.find(p => 
+                    // Check if user's divisional pick from this WC matchup was wrong
+                    const userPick = predictions.find(p => 
                         p.round === 'divisional' && 
                         p.conference === conference &&
                         (p.team === result.team1 || p.team === result.team2)
                     );
                     
-                    if (predictedWinner) {
-                        // Find the divisional slot with this prediction
+                    if (userPick && userPick.team !== result.winner) {
+                        // User picked wrong - cross out their pick in divisional
                         const divSlot = document.querySelector(
-                            `[data-conference="${conference}"][data-round="divisional"][data-slot="${predictedWinner.slot}"]`
+                            `[data-conference="${conference}"][data-round="divisional"][data-slot="${userPick.slot}"]`
                         );
-                        if (divSlot && divSlot.dataset.teamData) {
-                            const teamData = JSON.parse(divSlot.dataset.teamData);
-                            if (teamData.abbr === result.winner) {
-                                divSlot.classList.add('prediction-correct');
-                            } else {
-                                divSlot.classList.add('prediction-wrong');
-                            }
-                        }
+                        if (divSlot) divSlot.classList.add('prediction-wrong');
                     }
                 }
-
+                
                 if (round === 'divisional') {
-                    // Check if user predicted the divisional winner correctly
-                    const predictedWinner = predictions.find(p => 
+                    // Check if user's conference pick from this divisional matchup was wrong
+                    const userPick = predictions.find(p => 
                         p.round === 'conference' && 
                         p.conference === conference &&
-                        (p.team === result.winner || p.team === result.team1 || p.team === result.team2)
+                        (p.team === result.team1 || p.team === result.team2)
                     );
                     
-                    if (predictedWinner) {
+                    if (userPick && userPick.team !== result.winner) {
+                        // User picked wrong - cross out their pick in conference
                         const confSlot = document.querySelector(
-                            `[data-conference="${conference}"][data-round="conference"][data-slot="${predictedWinner.slot}"]`
+                            `[data-conference="${conference}"][data-round="conference"][data-slot="${userPick.slot}"]`
                         );
-                        if (confSlot && confSlot.dataset.teamData) {
-                            const teamData = JSON.parse(confSlot.dataset.teamData);
-                            if (teamData.abbr === result.winner) {
-                                confSlot.classList.add('prediction-correct');
-                            } else if (teamData.abbr === result.team1 || teamData.abbr === result.team2) {
-                                confSlot.classList.add('prediction-wrong');
-                            }
-                        }
+                        if (confSlot) confSlot.classList.add('prediction-wrong');
                     }
                 }
-
+                
                 if (round === 'conference') {
-                    // Check if user predicted the conference winner correctly
-                    const predictedWinner = predictions.find(p => 
+                    // Check if user's SB pick from this conference was wrong
+                    const userPick = predictions.find(p => 
                         p.round === 'sb' && 
                         p.conference === conference
                     );
                     
-                    if (predictedWinner) {
-                        const sbSlot = document.querySelector(
-                            `[data-conference="${conference}"][data-round="sb"]`
-                        );
-                        if (sbSlot && sbSlot.dataset.teamData) {
-                            const teamData = JSON.parse(sbSlot.dataset.teamData);
-                            if (teamData.abbr === result.winner) {
-                                sbSlot.classList.add('prediction-correct');
-                            } else if (teamData.abbr === result.team1 || teamData.abbr === result.team2) {
-                                sbSlot.classList.add('prediction-wrong');
-                            }
-                        }
+                    if (userPick && userPick.team !== result.winner) {
+                        // User picked wrong - cross out their pick in SB
+                        const sbSlot = conference === 'AFC' ? 0 : 1;
+                        const sbDiv = document.querySelector(`[data-round="sb"][data-slot="${sbSlot}"]`);
+                        if (sbDiv) sbDiv.classList.add('prediction-wrong');
                     }
                 }
-
+                
                 if (round === 'sb') {
-                    // Check if user predicted the SB winner correctly
-                    const predictedChampion = predictions.find(p => p.round === 'champion');
+                    // Check if user's champion pick was wrong
+                    const championPick = predictions.find(p => p.round === 'champion');
                     
-                    if (predictedChampion) {
+                    if (championPick && championPick.team !== result.winner) {
                         const championDiv = document.querySelector('.champion-team');
-                        if (championDiv) {
-                            if (predictedChampion.team === result.winner) {
-                                championDiv.classList.add('prediction-correct');
-                            } else {
-                                championDiv.classList.add('prediction-wrong');
-                            }
-                        }
+                        if (championDiv) championDiv.classList.add('prediction-wrong');
                     }
                 }
             }
