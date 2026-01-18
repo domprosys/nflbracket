@@ -418,24 +418,24 @@
             });
         });
 
-        // Team data for display
+        // Team data for display - 2025-2026 NFL Playoff Teams
         const teamData = {
             // AFC
-            'KC': { name: 'Chiefs', seed: 1 },
-            'NE': { name: 'Patriots', seed: 2 },
-            'JAX': { name: 'Jaguars', seed: 3 },
-            'PIT': { name: 'Steelers', seed: 4 },
-            'HOU': { name: 'Texans', seed: 5 },
-            'BUF': { name: 'Bills', seed: 6 },
-            'LAC': { name: 'Chargers', seed: 7 },
+            'DEN': { name: 'Broncos', seed: 1, conference: 'AFC' },
+            'NE': { name: 'Patriots', seed: 2, conference: 'AFC' },
+            'JAX': { name: 'Jaguars', seed: 3, conference: 'AFC' },
+            'PIT': { name: 'Steelers', seed: 4, conference: 'AFC' },
+            'BUF': { name: 'Bills', seed: 5, conference: 'AFC' },
+            'HOU': { name: 'Texans', seed: 6, conference: 'AFC' },
+            'LAC': { name: 'Chargers', seed: 7, conference: 'AFC' },
             // NFC
-            'DET': { name: 'Lions', seed: 1 },
-            'CHI': { name: 'Bears', seed: 2 },
-            'PHI': { name: 'Eagles', seed: 3 },
-            'CAR': { name: 'Panthers', seed: 4 },
-            'LAR': { name: 'Rams', seed: 5 },
-            'SF': { name: '49ers', seed: 6 },
-            'GB': { name: 'Packers', seed: 7 }
+            'SEA': { name: 'Seahawks', seed: 1, conference: 'NFC' },
+            'CHI': { name: 'Bears', seed: 2, conference: 'NFC' },
+            'GB': { name: 'Packers', seed: 3, conference: 'NFC' },
+            'PHI': { name: 'Eagles', seed: 4, conference: 'NFC' },
+            'LAR': { name: 'Rams', seed: 5, conference: 'NFC' },
+            'SF': { name: '49ers', seed: 6, conference: 'NFC' },
+            'CAR': { name: 'Panthers', seed: 7, conference: 'NFC' }
         };
 
         // Generate Divisional matchups from Wild Card results
@@ -474,8 +474,8 @@
             loadingMsg.style.display = 'none';
 
             // Add #1 seeds (they had bye)
-            afcWinners.push('KC');
-            nfcWinners.push('DET');
+            afcWinners.push('DEN');
+            nfcWinners.push('SEA');
 
             // Sort by seed
             afcWinners.sort((a, b) => teamData[a].seed - teamData[b].seed);
