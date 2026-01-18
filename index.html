@@ -1681,38 +1681,9 @@
         let isLeaderboardMode = false;
 
         async function openLeaderboard() {
-            // Fetch brackets data
-            try {
-                const response = await fetch('/.netlify/functions/get-brackets');
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error('Brackets error:', data.error);
-                    return;
-                }
-
-                allBrackets = data.brackets || [];
-                currentResults = data.results || {};
-                totalMatchesCount = data.totalMatches || 0;
-                
-                console.log('Loaded brackets:', allBrackets.length);
-                
-                // All brackets are shown (sorted by score)
-                leaderboardBrackets = allBrackets;
-                isLeaderboardMode = true;
-
-                // Switch headers
-                document.getElementById('stats-header').style.display = 'none';
-                document.getElementById('leaderboard-header').style.display = 'block';
-                
-                // Hide the bracket grid when showing leaderboard list
-                document.querySelector('.bracket-grid').style.display = 'none';
-
-                // Render leaderboard list
-                renderLeaderboard();
-            } catch (error) {
-                console.error('Failed to load brackets:', error);
-            }
+            // TEMPORARILY DISABLED - debugging in progress
+            console.log('Leaderboard temporarily disabled');
+            return;
         }
 
         function renderLeaderboard() {
